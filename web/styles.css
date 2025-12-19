@@ -86,16 +86,16 @@ body {
 /* Titlebar */
 #titlebar {
     height: 32px;
+    margin: 4px;
     background: var(--base);
     display: flex;
     justify-content: space-between;
     align-items: center;
     user-select: none;
+    -webkit-app-region: drag;
 }
 
-#drag-region {
-    -webkit-app-region: drag;
-    flex-grow: 1;
+#titlebar .title {
     height: 100%;
     display: flex;
     align-items: center;
@@ -159,11 +159,11 @@ body {
 #main-content {
     flex-grow: 1;
     background: var(--base);
-    padding: 12px;
+    /* padding: 12px; */
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    scrollbar-gutter: stable; /* Резервирует место под скроллбар, чтобы контент не прыгал */
+    /* scrollbar-gutter: stable;  */
 }
 
 /* Лоадер */
@@ -232,7 +232,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-bottom: 12px;
+    margin: 0px 10px;
 }
 
 .profile-img {
@@ -246,15 +246,18 @@ body {
 /* Элементы интерфейса */
 .nav-section {
     display: flex;
-    flex-direction: column;
     gap: 2px;
+}
+
+.nav-section .nav-btn.active {
+    border: none;
+    padding: 6px 12px;
 }
 
 .nav-btn {
     width: 100%;
-    padding: 8px;
-    margin-bottom: 2px;
     background: transparent;
+    padding: 6px 10px;
     border: none;
     color: var(--text);
     text-align: left;
@@ -263,7 +266,13 @@ body {
     transition: all 0.2s ease-out;
 }
 
-.nav-btn.active { background: var(--overlay); color: var(--iris); border-left: 3px solid var(--iris); padding-left: 7px; }
+.nav-btn.active { 
+    background: var(--overlay); 
+    color: var(--iris); 
+    border-left: 2px solid var(--iris);
+    padding: 6px 12px;
+}
+
 .nav-btn:hover { background: var(--overlay); }
 
 /* Общий стиль для иконок */
@@ -293,11 +302,13 @@ body {
 .library-header {
     font-size: 11px;
     color: var(--muted);
-    margin: 20px 10px 10px;
+    margin: 20px 10px 0px;
+    padding-bottom: 8px;
     letter-spacing: 1px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-bottom: 1px solid var(--highlight-high);
 }
 
 #game-badges {
@@ -343,28 +354,29 @@ body {
 
 #hero-section {
     position: relative;
-    height: 320px;
-    border-radius: 12px;
+    height: 400px;
     overflow: hidden;
     background-size: cover;
     background-position: center;
-    transition: opacity 0.3s ease-in-out;
+    mask-image: radial-gradient(white, black); /* Хак для идеального сглаживания углов в Chrome/Edge */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
-#hero-content {
+.hero-content {
     position: relative;
     z-index: 1;
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     height: 100%;
-    padding: 30px;
-    gap: 25px;
+    padding: 0px 24px;
+    flex-direction: column;
+    justify-content: end;
+    padding-bottom: 10px;
 }
 
 #game-logo {
-    max-width: 300px;
-    max-height: 240px;
-    display: block;
+    max-width: 600px;
+    max-height: 280px;
 }
 
 #game-title-fallback {
@@ -465,6 +477,40 @@ body {
 .iris-text { color: var(--iris); font-size: 48px; margin-bottom: 10px; }
 .muted-text { color: var(--subtle); max-width: 400px; line-height: 1.6; }
 
+/* --- Сетка Дашборда --- */
+.stats-grid {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.card-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.glass-card span {
+    color: var(--foam);
+}
+
+.glass-card {
+    background: var(--surface);
+    border: 1px solid var(--highlight-high);
+    padding: 14px 32px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    transition: transform 0.3s ease;
+    min-width: 180px;
+}
+
+.glass-card:hover { transform: translateY(-5px); }
+.glass-card span { font-size: 32px; }
+
 .stats-container {
     display: flex;
     gap: 20px;
@@ -493,11 +539,51 @@ body {
     pointer-events: none;
 }
 
+#progress-container {
+    margin: 16px 24px;
+    padding: 20px;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--highlight-high);
+    animation: fadeIn 0.4s ease;
+}
+
+/* Класс для плавного исчезновения */
+#progress-container.closing {
+    animation: fadeOut 0.4s ease forwards;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Дорожка прогресса */
+.progress-track {
+    height: 8px;
+    background: var(--overlay);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Заполнение полоски */
+#progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--iris), var(--foam));
+    width: 0%;
+    /* ВАЖНО: Плавное движение самой полоски */
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
 #game-stats-row {
-    margin: 20px 0;
-    display: flex;       /* Включаем флекс */
-    gap: 30px;           /* Расстояние между блоками */
-    align-items: flex-start; /* ВАЖНО: блоки не будут растягиваться вниз */
+    margin: 0px 24px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
     padding: 20px;
     background: var(--surface);
     border-radius: 12px;
@@ -507,7 +593,6 @@ body {
 .info-block {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .info-block label {
@@ -521,6 +606,14 @@ body {
     font-size: 20px;
     color: var(--foam);
     font-weight: bold;
+}
+
+.info-divider {
+    width: 1px;
+    height: 35px;
+    background: var(--highlight-high);
+    margin: 0 14px;
+    opacity: 0.6;
 }
 
 #history-list {
@@ -617,4 +710,66 @@ body {
 @keyframes fadeOut {
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(10px); }
+}
+
+.action-dock {
+    display: flex;
+    gap: 10px;
+    background: rgba(31, 29, 46, 0.6);
+    padding: 8px;
+    border-radius: 16px;
+    width: fit-content;
+    align-items: center;
+    border: 1px solid var(--highlight-high);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.btn-play {
+    background: var(--iris);
+    color: var(--base);
+    border: none;
+    padding: 0 25px;
+    height: 48px;
+    border-radius: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-play:hover {
+    background: var(--foam);
+    box-shadow: 0 0 20px rgba(156, 207, 216, 0.4);
+}
+
+/* Вторичные кнопки в доке */
+.btn-secondary {
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--highlight-high);
+    color: var(--iris);
+}
+
+/* Иерархия текста */
+.info-block label {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
 }

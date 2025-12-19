@@ -3,6 +3,7 @@ let activeInstallPath = null;
 let activeGameName = null;
 let isResizing = false;
 let currentBackups = [];
+const HERO_PLACEHOLDER = 'assets/hero_placeholder.jpg';
 
 // Ждем загрузки pywebview API
 window.addEventListener('pywebviewready', function() {
@@ -61,6 +62,7 @@ function initResizing() {
 
 
 function loadGames() {
+    showDashboard();
     const listContainer = document.getElementById('game-list');
     listContainer.classList.add('loading');
     
@@ -68,13 +70,10 @@ function loadGames() {
     if (refreshBtn) refreshBtn.classList.add('spinning'); // Можно добавить анимацию вращения
 
 
-    // Вызываем метод из bridge.py
     pywebview.api.get_games().then(games => {
-        // Небольшая искусственная задержка для красоты (300мс)
         setTimeout(() => {
             listContainer.innerHTML = '';
             
-            // Группировка (код из прошлого шага) ...
             const steamGames = games.filter(g => g.source === 'steam');
             const localGames = games.filter(g => g.source === 'local');
 
@@ -98,11 +97,6 @@ function loadGames() {
             renderGroup('Steam', steamGames);
             renderGroup('Локальные', localGames);
 
-            // Обновляем статистику на Дашборде
-            const statGames = document.getElementById('stat-total-games');
-            if (statGames) statGames.innerText = games.length;
-
-            // 2. Убираем затухание
             listContainer.classList.remove('loading');
         }, 300);
     });
@@ -113,39 +107,35 @@ function showEditor() {
     alert("Редактор базы данных в разработке...");
 }
 
-function showDashboard() {
-    // 1. Переключаем видимость
+async function showDashboard() {
     document.getElementById('dashboard-view').style.display = 'flex';
     document.getElementById('game-view').style.display = 'none';
-
-    // 2. Управляем активным состоянием кнопок
     setActiveNav('nav-home');
+
+    // Запрашиваем глобальную статистику из Python
+    const stats = await pywebview.api.get_dashboard_stats();
     
-    // 3. Сбрасываем ID выбранной игры, чтобы случайно не сделать бэкап "ничего"
-    selectedGameId = null;
-    activeInstallPath = null;
+    document.getElementById('stat-total-games').innerText = stats.total_games;
+    document.getElementById('stat-total-size').innerText = stats.total_backups_size;
 }
 
 function setActiveNav(activeId) {
-    // Убираем класс active у всех кнопок в сайдбаре
     const allBtns = document.querySelectorAll('.nav-btn');
     allBtns.forEach(btn => btn.classList.remove('active'));
 
-    // Добавляем класс active нужной кнопке (если передали ID)
     if (activeId) {
         const activeBtn = document.getElementById(activeId);
         if (activeBtn) activeBtn.classList.add('active');
     }
 }
 
-// Функция-помощник для предзагрузки изображений
 function preloadImage(url) {
     return new Promise((resolve) => {
-        if (!url) return resolve(); // Если ссылки нет, сразу считаем "загруженным"
+        if (!url) return resolve(); 
         const img = new Image();
         img.src = url;
         img.onload = resolve;
-        img.onerror = resolve; // Даже если картинка не нашлась, продолжаем
+        img.onerror = resolve; 
     });
 }
 
@@ -154,79 +144,80 @@ async function selectGame(game, element) {
     document.getElementById('game-view').style.display = 'none';
     document.getElementById('game-loader').style.display = 'flex';
 
-    // Подсвечиваем выбранную игру в списке
-    setActiveNav(null); // Сначала снимаем подсветку с "Главной" и "Редактора"
-
+    setActiveNav(null); 
     if (element) element.classList.add('active');
 
-    console.log("Выбрана игра:", game);
     selectedGameId = game.id;
     activeGameName = game.name;
     activeInstallPath = game.install_path;
 
-    // 2. Готовим список задач для ожидания
+    const steamHeroUrl = game.steam_id 
+        ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg` 
+        : null;
+
     const tasks = [
-        // Задача 1: Получение деталей из Python
-        pywebview.api.get_game_details(game.id)
+        pywebview.api.get_game_details(game.id),
+        validateHeroImage(steamHeroUrl)
     ];
 
-    // Задача 2: Предзагрузка фона (только для Steam)
-    if (game.steam_id) {
-        const heroUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg`;
-        tasks.push(preloadImage(heroUrl));
-        
-        // Задача 3: Предзагрузка лого
+     if (game.steam_id) {
         const logoUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
         tasks.push(preloadImage(logoUrl));
     }
 
-    // 3. Ждем выполнения ВСЕХ задач (БД + Картинки)
-    const [details] = await Promise.all(tasks);
+    const [details, validatedHeroUrl] = await Promise.all(tasks);
 
-     // 4. Когда всё загрузилось — заполняем интерфейс данными
-    updateGameUI(game, details);
+    updateGameUI(game, details, validatedHeroUrl);
 
-    // 5. Прячем лоадер и показываем готовый вид игры
     document.getElementById('game-loader').style.display = 'none';
     const gameView = document.getElementById('game-view');
     gameView.style.display = 'block';
     gameView.style.animation = 'fadeIn 0.5s ease';
 }
 
-// Вынесем заполнение UI в отдельную функцию для чистоты
-function updateGameUI(game, details) {
+// Вспомогательная функция специально для валидации фона
+function validateHeroImage(url) {
+    return new Promise((resolve) => {
+        if (!url) return resolve(HERO_PLACEHOLDER); 
+
+        const img = new Image();
+        img.src = url;
+        
+        img.onload = () => resolve(url);
+        img.onerror = () => resolve(HERO_PLACEHOLDER); 
+    });
+}
+
+function updateGameUI(game, details, heroUrl) {
     const hero = document.getElementById('hero-section');
     const logo = document.getElementById('game-logo');
     const titleFallback = document.getElementById('game-title-fallback');
     const detailsText = document.getElementById('active-game-details');
     const sourceBadge = document.getElementById('source-badge');
 
-    // Установка фона
+    hero.style.backgroundImage = `
+        linear-gradient(to top, var(--base) 5%, transparent 90%),
+        linear-gradient(to right, var(--base) 0%, transparent 70%),
+        url('${heroUrl}')
+    `;
+    hero.style.opacity = '1';
+
     if (game.steam_id) {
-        hero.style.backgroundImage = `url('https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg')`;
-        hero.style.opacity = '1';
         logo.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
         logo.style.display = 'block';
         titleFallback.innerText = '';
-        
-        // Если лого всё же не загрузится (бывает редкий баг)
         logo.onerror = () => {
             logo.style.display = 'none';
             titleFallback.innerText = game.name;
         };
     } else {
-        hero.style.backgroundImage = 'none';
-        hero.style.backgroundColor = 'var(--overlay)';
-        hero.style.opacity = '1';
         logo.style.display = 'none';
         titleFallback.innerText = game.name;
     }
 
-    // Установка текста и бэйджа
     sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
     detailsText.innerText = `ID: ${game.id}`;
 
-    // Обновление размера и истории бэкапов (из данных details)
     if (details) {
         document.getElementById('save-size').innerText = details.size;
         currentBackups = details.backups;
@@ -273,47 +264,83 @@ function deleteBackup(filePath) {
 }
 
 function openBackupFolder() {
-    // Вызываем метод из bridge для открытия папки конкретной игры
     if (activeGameName) {
         pywebview.api.open_backup_folder(activeGameName);
     }
 }
 
 function requestBackup() {
-     console.log("Попытка бэкапа для ID:", selectedGameId);
+    if (!selectedGameId) return;
+    console.log("Попытка бэкапа для ID:", selectedGameId);
 
-    if (!selectedGameId) {
-        alert("Ошибка: Игра не выбрана");
-        return;
+    const progContainer = document.getElementById('progress-container');
+    const fill = document.getElementById('progress-bar-fill');
+    const backupBtn = document.getElementById('backup-btn');
+
+    
+
+    // Подготовка UI
+    if (progContainer) {
+        progContainer.classList.remove('closing'); // Сбрасываем класс закрытия, если он был
+        progContainer.style.display = 'block';
+    }
+    if (fill) fill.style.width = '0%';
+    
+    if (backupBtn) {
+        backupBtn.disabled = true;
+        backupBtn.innerHTML = `<span class="material-symbols-rounded">sync</span> Сжатие...`;
     }
 
-    // Показываем контейнер прогресса
-    const progContainer = document.getElementById('progress-container');
-    const backupBtn = document.getElementById('backup-btn');
-    
-    progContainer.style.display = 'block';
-    backupBtn.disabled = true;
-    backupBtn.innerText = 'В процессе...';
-
-    // Вызываем Python
     pywebview.api.start_backup(selectedGameId);
 }
 
 // Эту функцию вызывает Python через evaluate_js
 function updateUIProgress(percent) {
     const fill = document.getElementById('progress-bar-fill');
-    fill.style.width = percent + '%';
+    const percentText = document.getElementById('progress-percent'); // Добавь такой ID в HTML если нужно
+
+    if (fill) fill.style.width = percent + '%';
+    if (percentText) percentText.innerText = Math.round(percent) + '%';
 }
 
 // Эту функцию вызывает Python по завершении
 function onBackupComplete(result) {
     const backupBtn = document.getElementById('backup-btn');
-    alert("Бэкап завершен: " + result);
-    
-    backupBtn.disabled = false;
-    backupBtn.innerHTML = '<span class="material-symbols-rounded">inventory_2</span> BACKUP';
-    document.getElementById('progress-bar-fill').style.width = '0%';
-    document.getElementById('progress-container').style.display = 'none';
+    const progContainer = document.getElementById('progress-container');
+    const fill = document.getElementById('progress-bar-fill');
+
+    // 1. Доводим полоску до конца, если она не успела
+    if (fill) fill.style.width = '100%';
+
+    // 2. Небольшая пауза, чтобы пользователь увидел завершение (800мс - 1с)
+    setTimeout(() => {
+        // 3. Запускаем анимацию исчезновения
+        if (progContainer) {
+            progContainer.classList.add('closing');
+            
+            // 4. Когда анимация исчезновения закончится — полностью скрываем
+            progContainer.onanimationend = () => {
+                if (progContainer.classList.contains('closing')) {
+                    progContainer.style.display = 'none';
+                    progContainer.classList.remove('closing');
+                    
+                    // Возвращаем кнопку в обычное состояние
+                    if (backupBtn) {
+                        backupBtn.disabled = false;
+                        backupBtn.innerHTML = `<span class="material-symbols-rounded">inventory_2</span> BACKUP`;
+                    }
+                    
+                    // Обновляем список бэкапов в модалке (так как появился новый)
+                    pywebview.api.get_game_details(selectedGameId).then(details => {
+                        if (details) currentBackups = details.backups;
+                    });
+                    
+                    // Опционально: выводим уведомление об успехе
+                    console.log("Бэкап готов:", result);
+                }
+            };
+        }
+    }, 1000); 
 }
 
 function openGameFolder() {
@@ -450,7 +477,7 @@ function handleMaximize() {
 }
 
 function initTitlebar() {
-    const dragRegion = document.getElementById('drag-region');
+    const dragRegion = document.getElementById('titlebar');
     if (!dragRegion) return;
 
     // Двойной клик для развертывания

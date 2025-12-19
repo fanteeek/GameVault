@@ -5,9 +5,9 @@ import webview
 import threading
 import json
 import subprocess
-import time
 
 from core.backup_service import BackupService
+from core.file_utils import FileUtils
 
 class Bridge:
     def __init__(self):
@@ -62,8 +62,23 @@ class Bridge:
         if self._window:
             self._window.resize(width, height)
     
-    # Backup Logic
+    def get_dashboard_stats(self):
+        backup_root = self._config.get("backup_root")
+        games = self._scanner.scan_all()
+        
+        # Считаем общий объем всех файлов в папке бэкапов
+        total_size_bytes = 0
+        path = Path(backup_root)
+        if path.exists():
+            for file in path.rglob('*.zip'):
+                total_size_bytes += file.stat().st_size
+
+        return {
+            "total_games": len(games),
+            "total_backups_size": FileUtils.format_size(total_size_bytes)
+        }
     
+    # Backup Logic
     def start_backup(self, game_id: str):
         # 1. Находим данные игры
         games = self._scanner.scan_all()

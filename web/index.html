@@ -9,7 +9,15 @@
 <body>
     <!-- Кастомный Titlebar для перетаскивания окна и управления -->
     <div id="titlebar" class="pywebview-drag-region">
-        <div id="drag-region">GameVault</div>
+        <div class="title">GameVault</div>
+
+        <div class="nav-section">
+            <button id="nav-home" class="nav-btn active" onclick="showDashboard()">
+                <span class="material-symbols-rounded">home</span> Главная
+            </button>
+            <button id="nav-editor" class="nav-btn" onclick="showEditor()">Редактор</button>
+        </div>   
+
         <div id="window-controls">
             <button onclick="pywebview.api.minimize_window()">
                 <span class="material-symbols-rounded">remove</span>
@@ -28,16 +36,10 @@
     <div id="app-container">
         <!-- Боковая панель (Sidebar) -->
         <aside id="sidebar">
-            <div class="nav-section">
-                <div class="profile">
+            <div class="profile">
                     <div class="profile-img"></div>
                     <span>Profile Name</span>
-                </div>
-                <button id="nav-home" class="nav-btn active" onclick="showDashboard()">
-                    <span class="material-symbols-rounded">home</span> Главная
-                </button>
-                <button id="nav-editor" class="nav-btn" onclick="showEditor()">Редактор</button>
-            </div>           
+            </div>
             <div class="library-header">
                 <span>БИБЛИОТЕКА</span>
                 <div class="header-actions">
@@ -47,9 +49,6 @@
                     <button class="simple-icon-btn" onclick="openSettings()">
                         <span class="material-symbols-rounded">settings</span>
                     </button>
-                    <!-- <button onclick="addPath()" id="add-folder-btn" title="Добавить папку">
-                        <span class="material-symbols-rounded">add_circle</span>
-                    </button> -->
                 </div>
             </div>
             <div id="game-list">
@@ -59,18 +58,26 @@
 
         <!-- Основной контент -->
         <main id="main-content">
-            <div id="dashboard-view">
-                <h1 class="iris-text">GameVault</h1>
-                <p class="muted-text">Добро пожаловать. Выберите игру из списка слева, чтобы начать работу с бэкапами.</p>
+            <div id="dashboard-view" class="view">
+                <div class="welcome-section">
+                    <h1 class="iris-text">GameVault</h1>
+                    <p class="subtle-text">Ваша библиотека сохранений под контролем</p>
+                </div>
                 
-                <div class="stats-container">
-                    <div class="stat-card">
-                        <span id="stat-total-games">0</span>
-                        <label>Игр в библиотеке</label>
+                <div class="stats-grid">
+                    <div class="glass-card">
+                        <span class="material-symbols-rounded icon-iris">Library_books</span>
+                        <div class="card-info">
+                            <label>Всего игр</label>
+                            <span id="stat-total-games">0</span>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <span id="stat-backup-count">?</span>
-                        <label>Бэкапов создано</label>
+                    <div class="glass-card">
+                        <span class="material-symbols-rounded icon-foam">Cloud_done</span>
+                        <div class="card-info">
+                            <label>Общий объем бэкапов</label>
+                            <span id="stat-total-size">0 KB</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -81,53 +88,58 @@
                 <p class="muted-text">Загрузка информации об игре...</p>
             </div>
 
-            <!-- Блок игры (скрыт по умолчанию) -->
-            <div id="game-view" style="display: none;">
+            <!-- 2. Обновленный Вид Игры (Action Dock) -->
+            <div id="game-view" class="view" style="display: none;">
                 <div id="hero-section">
-                    <div id="hero-content">
-                        <div id="game-info">
-                            <img id="game-logo" src="" alt="">
-                            <h1 id="game-title-fallback"></h1>
-                            <div id="game-badges">
-                                <span id="source-badge" class="game-badge"></span>
-                                <p id="active-game-details" class="game-badge"></p>
-                            </div>
-                            <div id="action-bar">
-                                <div class="action-group">
-                                    <button class="primary-btn" id="play-btn" onclick="requestPlay()">
-                                        <span class="material-symbols-rounded">play_circle</span> Играть
-                                    </button>
-                                    <button class="primary-btn" id="backup-btn" onclick="requestBackup()">
-                                        <span class="material-symbols-rounded">inventory_2</span>
-                                    </button>
-                                    <button class="secondary-btn" id="open-folder-btn" onclick="openGameFolder()">
-                                        <span class="material-symbols-rounded">folder_open</span>
-                                    </button>
-                                    <button class="secondary-btn" title="Открыть на PCGamingWiki" onclick="openWiki()">
-                                        <span class="material-symbols-rounded">language</span> Wiki
-                                    </button>
-                                </div>
-                            </div>
+                    <div class="hero-content">
+                        <img id="game-logo" src="" alt="">
+                        <h1 id="game-title-fallback"></h1>
+                        
+                        <div class="action-dock">
+                            <button class="btn-play" id="play-btn" onclick="requestPlay()">
+                                <span class="material-symbols-rounded">play_arrow</span> ИГРАТЬ
+                            </button>
+                            <button class="btn-secondary" onclick="requestBackup()" title="Backup">
+                                <span class="material-symbols-rounded">inventory_2</span>
+                            </button>
+                            <button class="btn-secondary" onclick="openGameFolder()" title="Папка игры">
+                                <span class="material-symbols-rounded">folder_open</span>
+                            </button>
+                            <button class="btn-secondary" onclick="openHistoryModal()" title="История">
+                                <span class="material-symbols-rounded">history</span>
+                            </button>
+                            <button class="btn-secondary" onclick="openWiki()" title="Wiki">
+                                <span class="material-symbols-rounded">language</span>
+                            </button>
                         </div>
                     </div>
                 </div>
-
+                    
                 <div id="progress-container" style="display: none;">
-                    <div id="progress-text">Создание архива...</div>
-                    <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
+                    <div class="progress-info">
+                        <span>Создание архива...</span>
+                        <span id="progress-percent">0%</span> <!-- Добавили ID здесь -->
+                    </div>
+                    <div class="progress-track">
+                        <div id="progress-bar-fill"></div>
+                    </div>
                 </div>
 
+                <!-- Бейджи и ID -->
                 <div id="game-stats-row">
                     <div class="info-block">
-                        <label>История бэкапов</label>
-                        <button class="secondary-btn" onclick="openHistoryModal()">
-                            <span class="material-symbols-rounded">history</span>
-                            Посмотреть
-                        </button>
-                    </div>
-                    <div class="info-block">
-                        <label>Размер сохранений</label>
+                        <label>Вес сохранений</label>
                         <span id="save-size">0 KB</span>
+                    </div>
+                    <div class="info-divider"></div>
+                    <div class="info-block">
+                        <label>Источник</label>
+                        <span id="source-badge" class="badge">STEAM</span>
+                    </div>
+                    <div class="info-divider"></div>
+                    <div class="info-block">
+                        <label>Идентификатор</label>
+                        <span id="active-game-details" class="subtle-text">ID: 0000</span>
                     </div>
                 </div>
             </div>
