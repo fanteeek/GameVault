@@ -115,6 +115,16 @@ body {
     padding: 12px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    scrollbar-gutter: stable; /* Резервирует место под скроллбар, чтобы контент не прыгал */
+}
+
+#main-content::-webkit-scrollbar {
+    width: 6px;
+}
+#main-content::-webkit-scrollbar-thumb {
+    background: var(--highlight-high);
+    border-radius: 10px;
 }
 
 /* Library */
@@ -168,7 +178,7 @@ body {
     cursor: pointer;
 }
 
-.nav-btn.active { background: var(--overlay); color: var(--iris); }
+.nav-btn.active { background: var(--overlay); color: var(--iris); border-left: 3px solid var(--iris); padding-left: 7px; }
 .nav-btn:hover { background: var(--overlay); }
 
 .library-header {
@@ -372,3 +382,30 @@ body {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+#game-stats-row {
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--highlight-high);
+}
+
+.info-block label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.info-block span { font-size: 18px; color: var(--foam); font-weight: bold; }
+
+#backup-history-section { margin-top: 30px; }
+#history-list {
+    margin: 10px 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-bottom: 1px solid var(--overlay);
+    font-size: 13px;
+}
+.history-item:hover { background: var(--overlay); }
+.text-btn { background: none; border: none; color: var(--iris); cursor: pointer; margin-top: 10px; }

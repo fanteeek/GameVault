@@ -1,5 +1,6 @@
 let selectedGameId = null;
 let activeInstallPath = null;
+let activeGameName = null;
 
 // Ждем загрузки pywebview API
 window.addEventListener('pywebviewready', function() {
@@ -88,6 +89,7 @@ function setActiveNav(activeId) {
 function selectGame(game, element) {
     document.getElementById('dashboard-view').style.display = 'none';
     document.getElementById('game-view').style.display = 'block'
+
     // Подсвечиваем выбранную игру в списке
     setActiveNav(null); // Сначала снимаем подсветку с "Главной" и "Редактора"
 
@@ -95,14 +97,9 @@ function selectGame(game, element) {
         element.classList.add('active');
     }
 
-    // const gameView = document.getElementById('game-view');
-    // gameView.style.display = 'block';
-    // gameView.style.animation = 'none'; // Сброс анимации
-    // gameView.offsetHeight; // "Взлом" для перезапуска анимации
-    // gameView.style.animation = 'fadeIn 0.5s ease';
-
     console.log("Выбрана игра:", game);
     selectedGameId = game.id;
+    activeGameName = game.name;
     activeInstallPath = game.install_path;
 
     const hero = document.getElementById('hero-section');
@@ -141,6 +138,36 @@ function selectGame(game, element) {
         details.innerText = `ID: ${game.id} | Path: ${game.install_path}`;
     }, 150);
 
+    // Запрашиваем детали (размер и историю)
+    pywebview.api.get_game_details(game.id).then(details => {
+        if (details) {
+            document.getElementById('save-size').innerText = details.size;
+            renderHistory(details.backups);
+        }
+    });
+
+}
+
+function renderHistory(backups) {
+    const list = document.getElementById('history-list');
+    list.innerHTML = backups.length ? '' : '<p class="muted-text">Бэкапов еще нет</p>';
+    
+    backups.forEach(b => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <span>${b.name}</span>
+            <span class="muted-text">${b.size}</span>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function openBackupFolder() {
+    // Вызываем метод из bridge для открытия папки конкретной игры
+    if (activeGameName) {
+        pywebview.api.open_backup_folder(activeGameName);
+    }
 }
 
 function requestBackup() {

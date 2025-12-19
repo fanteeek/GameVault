@@ -1,7 +1,9 @@
+from pathlib import Path
 import sys
 import os
 import webview
 import threading
+import json
 
 from core.backup_service import BackupService
 
@@ -55,7 +57,8 @@ class Bridge:
                 )
                 self._window.evaluate_js(f"onBackupComplete('{result_path}')")
             except Exception as e:
-                self._window.evaluate_js(f"onBackupComplete('Error: {str(e)}')")
+                error_msg = json.dumps(str(e))
+                self._window.evaluate_js(f"onBackupComplete({error_msg})")
 
         threading.Thread(target=worker, daemon=True).start()
         return {"status": "started"}
@@ -82,4 +85,31 @@ class Bridge:
                 return {"status": "success", "path": selected_path}
         
         return {"status": "cancelled"}
+    
+    def get_game_details(self, game_id: str):
+        """Возвращает размер сохранений и список бэкапов."""
+        games = self._scanner.scan_all()
+        game = next((g for g in games if str(g['id']) == str(game_id)), None)
+        
+        if not game: return None
+
+        from core.file_utils import FileUtils
+        size_bytes = FileUtils.get_folder_size(game['save_paths'])
+        backups = FileUtils.get_backups_list(self._config.get("backup_root"), game['name'])
+
+        return {
+            "size": FileUtils.format_size(size_bytes),
+            "backups": backups
+        }
+
+    def open_backup_folder(self, game_name: str):
+        from core.file_utils import FileUtils
+        safe_name = FileUtils.sanitize_name(game_name)
+        
+        path = Path(self._config.get("backup_root")) / safe_name
+        if not path.exists():
+            path = Path(self._config.get("backup_root"))
+            
+        if path.exists():
+            os.startfile(str(path))
     
