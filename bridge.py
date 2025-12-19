@@ -4,6 +4,7 @@ import os
 import webview
 import threading
 import json
+import subprocess
 
 from core.backup_service import BackupService
 
@@ -147,6 +148,30 @@ class Bridge:
             "non_steam_paths": self._config.get("non_steam_paths", []),
             "backup_root": self._config.get("backup_root")
         }
+
+    def play_game(self, game_id: str):
+        games = self._scanner.scan_all()
+        game = next((g for g in games if str(g['id']) == str(game_id)), None)
+        
+        if not game: return False
+
+        try:
+            if game['source'] == 'steam' and game['steam_id']:
+                # Запуск через Steam
+                os.startfile(f"steam://run/{game['steam_id']}")
+            else:
+                # Запуск локальной игры: ищем самый большой .exe в папке
+                path = Path(game['install_path'])
+                exes = list(path.glob("*.exe")) + list(path.glob("*/*.exe"))
+                if exes:
+                    # Сортируем по размеру, обычно главный файл самый тяжелый
+                    main_exe = max(exes, key=lambda p: p.stat().st_size)
+                    # Запускаем с учетом рабочей директории
+                    subprocess.Popen(str(main_exe), cwd=str(main_exe.parent))
+            return True
+        except Exception as e:
+            print(f"Launch error: {e}")
+            return False
 
   
     

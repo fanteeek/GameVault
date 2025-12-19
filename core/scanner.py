@@ -38,7 +38,8 @@ class GameScanner:
                 if folder.is_dir():
                     game_data = self._query_db("install_folder", folder.name)
                     if game_data:
-                        games.append(self._format_game(game_data, folder, 'steam'))
+                        if self._is_really_installed(folder, game_data["steam_id"]):
+                            games.append(self._format_game(game_data, folder, 'steam'))
 
         # 2. Сканируем локальные папки из настроек
         for path_str in self.config.get("non_steam_paths", []):
@@ -49,7 +50,8 @@ class GameScanner:
                 if folder.is_dir():
                     game_data = self._query_db("install_folder", folder.name)
                     if game_data:
-                        games.append(self._format_game(game_data, folder, 'local'))
+                        if self._is_really_installed(folder):
+                            games.append(self._format_game(game_data, folder, 'local'))
         
         return games
 
@@ -67,3 +69,25 @@ class GameScanner:
             "save_paths": resolved_saves,
             "source": source
         }
+    
+    def _is_really_installed(self, folder: Path, steam_id: str = None) -> bool:
+        """Проверяет, действительно ли игра установлена."""
+        # 1. Для Steam проверяем файл манифеста
+        if steam_id:
+            # Манифесты лежат в library/steamapps/appmanifest_ID.acf
+            # Наш folder это library/steamapps/common/GameName
+            manifest_path = folder.parent.parent / f"appmanifest_{steam_id}.acf"
+            if manifest_path.exists():
+                return True
+            return False
+
+        # 2. Для Non-Steam проверяем наличие .exe файлов
+        try:
+            # Ищем хотя бы один .exe в папке игры (не слишком глубоко для скорости)
+            exes = list(folder.glob("*.exe")) + list(folder.glob("*/*.exe"))
+            if exes:
+                return True
+        except Exception:
+            return False
+
+        return False
