@@ -20,14 +20,23 @@
         <!-- Боковая панель (Sidebar) -->
         <aside id="sidebar">
             <div class="nav-section">
-                <button id="nav-home" class="nav-btn active" onclick="showDashboard()">Главная</button>
+                <button id="nav-home" class="nav-btn active" onclick="showDashboard()">
+                    <span class="material-symbols-rounded">home</span> Главная
+                </button>
                 <button id="nav-editor" class="nav-btn" onclick="showEditor()">Редактор</button>
+                <button id="nav-settings" class="nav-btn" onclick="openSettings()">
+                    <span class="material-symbols-rounded">settings</span> Настройки
+                </button>
             </div>           
             <div class="library-header">
                 <span>БИБЛИОТЕКА</span>
                 <div class="header-actions">
-                    <button onclick="loadGames()" id="refresh-btn" title="Обновить">🔄</button>
-                    <button onclick="addFolder()" id="add-folder-btn" title="Добавить папку">+</button>
+                    <button onclick="loadGames()" id="refresh-btn" title="Обновить">
+                        <span class="material-symbols-rounded">refresh</span>
+                    </button>
+                    <button onclick="addFolder()" id="add-folder-btn" title="Добавить папку">
+                        <span class="material-symbols-rounded">add_circle</span>
+                    </button>
                 </div>
             </div>
             <div id="game-list">
@@ -69,10 +78,13 @@
                             <div id="action-bar">
                                 <div class="action-group">
                                     <button class="primary-btn" id="backup-btn" onclick="requestBackup()">
-                                        <span class="btn-icon">📦</span> BACKUP
+                                        <span class="material-symbols-rounded">inventory_2</span> BACKUP
                                     </button>
                                     <button class="secondary-btn" id="open-folder-btn" onclick="openGameFolder()">
-                                        <span class="btn-icon">📂</span> Папка игры
+                                        <span class="material-symbols-rounded">folder_open</span> Папка игры
+                                    </button>
+                                    <button class="secondary-btn" title="Открыть на PCGamingWiki" onclick="openWiki()">
+                                        <span class="material-symbols-rounded">language</span> Wiki
                                     </button>
                                 </div>
                             </div>
@@ -102,6 +114,20 @@
             </div>
         </main>
 
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Настройки</h2>
+                <button onclick="closeSettings()" class="close-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <label>Папки для сканирования (Non-Steam):</label>
+                <div id="settings-path-list"></div>
+                <button class="primary-btn" onclick="addFolder()">Добавить папку</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>

@@ -112,4 +112,32 @@ class Bridge:
             
         if path.exists():
             os.startfile(str(path))
+            
+    def delete_backup(self, file_path: str):
+        try:
+            path = Path(file_path)
+            if path.exists() and path.suffix == '.zip':
+                path.unlink() # Удаляет файл
+                return True
+        except Exception as e:
+            print(f"Delete error: {e}")
+        return False
+    
+    def remove_folder(self, path: str):
+        current = self._config.get("non_steam_paths", [])
+        print(current)
+        print(path)
+        if path in current:
+            current.remove(path)
+            self._config.set("non_steam_paths", current)
+            return True
+        return False
+
+    def get_settings(self):
+        return {
+            "non_steam_paths": self._config.get("non_steam_paths", []),
+            "backup_root": self._config.get("backup_root")
+        }
+
+  
     

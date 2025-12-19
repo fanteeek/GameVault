@@ -26,6 +26,29 @@ body {
     border: 1px solid var(--highlight-high); /* Тонкая рамка вокруг приложения */
 }
 
+@font-face {
+    font-family: 'Material Symbols Rounded';
+    font-style: normal;
+    font-weight: 100 700;
+    src: url('assets/fonts/material-symbols.woff2') format('woff2');
+}
+
+.material-symbols-rounded {
+    font-family: 'Material Symbols Rounded';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    /* -webkit-font-feature-settings: 'liga'; */
+    -webkit-font-smoothing: antialiased;
+}
+
 /* Titlebar */
 #titlebar {
     height: 32px;
@@ -180,6 +203,30 @@ body {
 
 .nav-btn.active { background: var(--overlay); color: var(--iris); border-left: 3px solid var(--iris); padding-left: 7px; }
 .nav-btn:hover { background: var(--overlay); }
+
+/* Общий стиль для иконок */
+.material-symbols-rounded {
+    font-size: 20px; /* Размер иконки */
+    vertical-align: middle;
+    display: inline-block;
+    line-height: 1;
+}
+
+/* Центрирование иконок в кнопках */
+.nav-btn, .primary-btn, .secondary-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Отступ между иконкой и текстом */
+}
+
+/* Специфические настройки для иконок в кнопках навигации */
+.nav-btn .material-symbols-rounded {
+    color: var(--subtle);
+}
+
+.nav-btn.active .material-symbols-rounded {
+    color: var(--iris);
+}
 
 .library-header {
     font-size: 11px;
@@ -409,3 +456,59 @@ body {
 }
 .history-item:hover { background: var(--overlay); }
 .text-btn { background: none; border: none; color: var(--iris); cursor: pointer; margin-top: 10px; }
+
+/* Settings Modal */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    justify-content: center; align-items: center;
+}
+.modal-content {
+    background: var(--surface);
+    padding: 30px;
+    border-radius: 12px;
+    width: 500px;
+    border: 1px solid var(--highlight-high);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.path-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--overlay);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid var(--highlight-high);
+}
+
+.path-item .delete-btn {
+    background: none;
+    border: none;
+    color: var(--love);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.path-item .delete-btn:hover {
+    color: var(--text);
+}
+
+.close-modal { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }

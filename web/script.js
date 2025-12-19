@@ -156,11 +156,27 @@ function renderHistory(backups) {
         const item = document.createElement('div');
         item.className = 'history-item';
         item.innerHTML = `
-            <span>${b.name}</span>
-            <span class="muted-text">${b.size}</span>
+            <div class="history-info">
+                <span class="history-name">${b.name}</span>
+                <span class="history-meta">${b.size} | ${new Date(b.date * 1000).toLocaleDateString()}</span>
+            </div>
+            <button class="delete-btn" onclick="deleteBackup('${b.path.replace(/\\/g, '/')}')">🗑️</button>
         `;
         list.appendChild(item);
     });
+}
+
+function deleteBackup(filePath) {
+    if (confirm("Удалить этот бэкап навсегда?")) {
+        pywebview.api.delete_backup(filePath).then(success => {
+            if (success) {
+                // Просто обновляем детали игры, чтобы список перерисовался
+                pywebview.api.get_game_details(selectedGameId).then(details => {
+                    renderHistory(details.backups);
+                });
+            }
+        });
+    }
 }
 
 function openBackupFolder() {
@@ -222,4 +238,77 @@ function addFolder() {
             loadGames();
         }
     });
+}
+
+function openWiki() {
+    if (activeGameName) {
+        // Просто открываем браузер по ссылке
+        const url = `https://www.pcgamingwiki.com/wiki/${encodeURIComponent(activeGameName)}`;
+        window.open(url, '_blank'); 
+        // Или через Python: pywebview.api.open_url(url)
+    }
+}
+
+// Settings Modal
+
+// Открытие модального окна настроек
+function openSettings() {
+    const modal = document.getElementById('settings-modal');
+    
+    // Запрашиваем актуальные данные из Python
+    pywebview.api.get_settings().then(settings => {
+        renderSettings(settings);
+        modal.style.display = 'flex'; // Показываем окно
+    });
+}
+
+// Закрытие окна
+function closeSettings() {
+    document.getElementById('settings-modal').style.display = 'none';
+}
+
+// Отрисовка списка путей в настройках
+function renderSettings(settings) {
+    const pathList = document.getElementById('settings-path-list');
+    pathList.innerHTML = ''; // Очищаем старый список
+
+    if (settings.non_steam_paths.length === 0) {
+        pathList.innerHTML = '<p class="muted-text" style="margin-bottom: 10px;">Папки не добавлены</p>';
+    }
+
+    settings.non_steam_paths.forEach(path => {
+        const item = document.createElement('div');
+        item.className = 'path-item';
+        item.innerHTML = `
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 350px;" title="${path}">
+                ${path}
+            </span>
+            <button class="delete-btn" onclick="removePath('${path.replace(/\\/g, '/')}')">
+                <span class="material-symbols-rounded">delete</span>
+            </button>
+        `;
+        pathList.appendChild(item);
+    });
+}
+
+// Удаление пути из настроек
+function removePath(path) {
+    console.log(path);
+    if (confirm("Перестать сканировать эту папку?")) {
+        pywebview.api.remove_folder(path).then(success => {
+            if (success) {
+                // После удаления обновляем и окно настроек, и основной список игр
+                openSettings(); 
+                loadGames();
+            }
+        });
+    }
+}
+
+// Закрытие модалки при клике вне контента
+window.onclick = function(event) {
+    const modal = document.getElementById('settings-modal');
+    if (event.target == modal) {
+        closeSettings();
+    }
 }
