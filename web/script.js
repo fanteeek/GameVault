@@ -449,14 +449,42 @@ function handleMaximize() {
     });
 }
 
-// Добавляем обработчик двойного клика на заголовок
 function initTitlebar() {
     const dragRegion = document.getElementById('drag-region');
-    if (dragRegion) {
-        dragRegion.addEventListener('dblclick', () => {
-            handleMaximize();
+    if (!dragRegion) return;
+
+    // Двойной клик для развертывания
+    dragRegion.addEventListener('dblclick', handleMaximize);
+
+    // Восстановление при перетаскивании
+    dragRegion.addEventListener('mousedown', (e) => {
+        pywebview.api.get_maximize_status().then(isMaximized => {
+            if (isMaximized) {
+                const onMouseMove = (moveEvent) => {
+                    if (Math.abs(moveEvent.screenX - e.screenX) > 5 || 
+                        Math.abs(moveEvent.screenY - e.screenY) > 5) {
+                        
+                        pywebview.api.simple_restore().then(wasRestored => {
+                            if (wasRestored) {
+                                const icon = document.getElementById('max-icon');
+                                if (icon) icon.innerText = 'crop_square';
+                            }
+                        });
+
+                        // Удаляем слушатель сразу
+                        document.removeEventListener('mousemove', onMouseMove);
+                    }
+                };
+
+                const onMouseUp = () => {
+                    document.removeEventListener('mousemove', onMouseMove);
+                };
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            }
         });
-    }
+    });
 }
 
 // Закрытие модалки при клике вне контента

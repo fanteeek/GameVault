@@ -5,6 +5,7 @@ import webview
 import threading
 import json
 import subprocess
+import time
 
 from core.backup_service import BackupService
 
@@ -21,8 +22,16 @@ class Bridge:
         self._scanner = GameScanner(self._steam, self._config, self._resolver)
         self._window = None
         self._is_maximized = False
+        
 
     # Window Controls
+    def simple_restore(self):
+        if self._is_maximized:
+            self._window.restore()
+            self._is_maximized = False
+            return True
+        return False
+    
     def toggle_maximize(self):
         if self._window:
             if self._is_maximized:
@@ -36,6 +45,9 @@ class Bridge:
     def set_window(self, window):
         self._window = window
 
+    def get_maximize_status(self):
+        return self._is_maximized
+    
     def get_games(self):
         return self._scanner.scan_all()
 
