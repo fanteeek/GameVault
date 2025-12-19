@@ -136,66 +136,99 @@ function setActiveNav(activeId) {
     }
 }
 
-function selectGame(game, element) {
+// Функция-помощник для предзагрузки изображений
+function preloadImage(url) {
+    return new Promise((resolve) => {
+        if (!url) return resolve(); // Если ссылки нет, сразу считаем "загруженным"
+        const img = new Image();
+        img.src = url;
+        img.onload = resolve;
+        img.onerror = resolve; // Даже если картинка не нашлась, продолжаем
+    });
+}
+
+async function selectGame(game, element) {
     document.getElementById('dashboard-view').style.display = 'none';
-    document.getElementById('game-view').style.display = 'block'
+    document.getElementById('game-view').style.display = 'none';
+    document.getElementById('game-loader').style.display = 'flex';
 
     // Подсвечиваем выбранную игру в списке
     setActiveNav(null); // Сначала снимаем подсветку с "Главной" и "Редактора"
 
-    if (element) {
-        element.classList.add('active');
-    }
+    if (element) element.classList.add('active');
 
     console.log("Выбрана игра:", game);
     selectedGameId = game.id;
     activeGameName = game.name;
     activeInstallPath = game.install_path;
 
+    // 2. Готовим список задач для ожидания
+    const tasks = [
+        // Задача 1: Получение деталей из Python
+        pywebview.api.get_game_details(game.id)
+    ];
+
+    // Задача 2: Предзагрузка фона (только для Steam)
+    if (game.steam_id) {
+        const heroUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg`;
+        tasks.push(preloadImage(heroUrl));
+        
+        // Задача 3: Предзагрузка лого
+        const logoUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
+        tasks.push(preloadImage(logoUrl));
+    }
+
+    // 3. Ждем выполнения ВСЕХ задач (БД + Картинки)
+    const [details] = await Promise.all(tasks);
+
+     // 4. Когда всё загрузилось — заполняем интерфейс данными
+    updateGameUI(game, details);
+
+    // 5. Прячем лоадер и показываем готовый вид игры
+    document.getElementById('game-loader').style.display = 'none';
+    const gameView = document.getElementById('game-view');
+    gameView.style.display = 'block';
+    gameView.style.animation = 'fadeIn 0.5s ease';
+}
+
+// Вынесем заполнение UI в отдельную функцию для чистоты
+function updateGameUI(game, details) {
     const hero = document.getElementById('hero-section');
     const logo = document.getElementById('game-logo');
     const titleFallback = document.getElementById('game-title-fallback');
-    const details = document.getElementById('active-game-details');
+    const detailsText = document.getElementById('active-game-details');
     const sourceBadge = document.getElementById('source-badge');
 
-    hero.style.opacity = '0';
-    logo.style.display = 'none';
-    logo.scr = '';
-
-    setTimeout(() => {
-        if (game.steam_id) {
-            hero.style.backgroundImage = `url('https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg')`;
-            logo.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
-            const img = new Image();
-            img.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg`;
-            img.onload = () => { hero.style.opacity = '1'; };
-        } else {
-            hero.style.backgroundImage = 'none';
-            hero.style.backgroundColor = 'var(--overlay)';
-            hero.style.opacity = '1';
-        }
-
+    // Установка фона
+    if (game.steam_id) {
+        hero.style.backgroundImage = `url('https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg')`;
+        hero.style.opacity = '1';
+        logo.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
+        logo.style.display = 'block';
+        titleFallback.innerText = '';
+        
+        // Если лого всё же не загрузится (бывает редкий баг)
         logo.onerror = () => {
             logo.style.display = 'none';
             titleFallback.innerText = game.name;
         };
-        logo.onload = () => {
-            logo.style.display = 'block';
-            titleFallback.innerText = '';
-        };
+    } else {
+        hero.style.backgroundImage = 'none';
+        hero.style.backgroundColor = 'var(--overlay)';
+        hero.style.opacity = '1';
+        logo.style.display = 'none';
+        titleFallback.innerText = game.name;
+    }
 
-        sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
-        details.innerText = `ID: ${game.id} | Path: ${game.install_path}`;
-    }, 150);
+    // Установка текста и бэйджа
+    sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
+    detailsText.innerText = `ID: ${game.id} | Path: ${game.install_path}`;
 
-    // Запрашиваем детали (размер и историю)
-    pywebview.api.get_game_details(game.id).then(details => {
-        if (details) {
-            document.getElementById('save-size').innerText = details.size;
-            renderHistory(details.backups);
-        }
-    });
-
+    // Обновление размера и истории бэкапов (из данных details)
+    if (details) {
+        document.getElementById('save-size').innerText = details.size;
+        renderHistory(details.backups);
+    }
 }
 
 function renderHistory(backups) {
