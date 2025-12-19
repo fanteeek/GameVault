@@ -1,12 +1,62 @@
 let selectedGameId = null;
 let activeInstallPath = null;
 let activeGameName = null;
+let isResizing = false;
 
 // Ждем загрузки pywebview API
 window.addEventListener('pywebviewready', function() {
     console.log('API готово');
     loadGames();
+    initResizing();
 });
+
+function initResizing() {
+    const r = document.getElementById('resizer-r');
+    const b = document.getElementById('resizer-b');
+    const rb = document.getElementById('resizer-rb');
+
+    const handleMouseDown = (e, direction) => {
+        isResizing = true;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startW = window.innerWidth;
+        const startH = window.innerHeight;
+
+        const onMouseMove = (moveEvent) => {
+            if (!isResizing) return;
+
+            let newW = startW;
+            let newH = startH;
+
+            if (direction === 'r' || direction === 'rb') {
+                newW = startW + (moveEvent.clientX - startX);
+            }
+            if (direction === 'b' || direction === 'rb') {
+                newH = startH + (moveEvent.clientY - startY);
+            }
+
+            // Ограничения минимального размера
+            if (newW < 800) newW = 800;
+            if (newH < 600) newH = 600;
+
+            pywebview.api.resize_window(newW, newH);
+        };
+
+        const onMouseUp = () => {
+            isResizing = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
+    r.addEventListener('mousedown', (e) => handleMouseDown(e, 'r'));
+    b.addEventListener('mousedown', (e) => handleMouseDown(e, 'b'));
+    rb.addEventListener('mousedown', (e) => handleMouseDown(e, 'rb'));
+}
+
 
 function loadGames() {
     const listContainer = document.getElementById('game-list');
@@ -231,13 +281,32 @@ function openGameFolder() {
     }
 }
 
-function addFolder() {
+function addPath() {
     pywebview.api.select_folder().then(response => {
         if (response.status === "success") {
             // Перезагружаем список игр, так как добавилась новая папка
             loadGames();
+
+            const modal = document.getElementById('settings-modal');
+            if (modal && modal.style.display === 'flex') {
+                openSettings();
+            }
         }
     });
+}
+
+// Удаление пути из настроек
+function removePath(path) {
+    console.log(path);
+    if (confirm("Перестать сканировать эту папку?")) {
+        pywebview.api.remove_folder(path).then(success => {
+            if (success) {
+                // После удаления обновляем и окно настроек, и основной список игр
+                openSettings(); 
+                loadGames();
+            }
+        });
+    }
 }
 
 function openWiki() {
@@ -291,20 +360,6 @@ function renderSettings(settings) {
     });
 }
 
-// Удаление пути из настроек
-function removePath(path) {
-    console.log(path);
-    if (confirm("Перестать сканировать эту папку?")) {
-        pywebview.api.remove_folder(path).then(success => {
-            if (success) {
-                // После удаления обновляем и окно настроек, и основной список игр
-                openSettings(); 
-                loadGames();
-            }
-        });
-    }
-}
-
 // Закрытие модалки при клике вне контента
 window.onclick = function(event) {
     const modal = document.getElementById('settings-modal');
@@ -312,3 +367,4 @@ window.onclick = function(event) {
         closeSettings();
     }
 }
+

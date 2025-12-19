@@ -32,7 +32,11 @@ class Bridge:
 
     def minimize_window(self):
         self._window.minimize()
-        
+    
+    def resize_window(self, width: int, height: int):
+        if self._window:
+            self._window.resize(width, height)
+    
     def start_backup(self, game_id: str):
         # 1. Находим данные игры
         games = self._scanner.scan_all()

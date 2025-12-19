@@ -168,7 +168,7 @@ body {
 
 #add-folder-btn:hover { color: var(--love); }
 
-#refresh-btn {
+#refresh-btn, #settings-btn {
     background: transparent;
     border: none;
     color: var(--muted);
@@ -177,7 +177,7 @@ body {
     transition: color 0.2s;
 }
 
-#refresh-btn:hover { color: var(--iris); }
+#refresh-btn:hover, #settings-btn:hover { color: var(--iris); }
 
 /* Стиль для разделителей групп в списке */
 .list-section-title {
@@ -466,6 +466,7 @@ body {
     background: rgba(0,0,0,0.8);
     z-index: 1000;
     justify-content: center; align-items: center;
+    animation: fadeIn 0.5s ease;
 }
 .modal-content {
     background: var(--surface);
@@ -512,3 +513,30 @@ body {
 }
 
 .close-modal { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+
+/* Зоны захвата */
+.resizer {
+    position: fixed;
+    z-index: 10000;
+    background: transparent; /* Сделайте red для отладки, чтобы увидеть их */
+}
+
+#resizer-r {
+    top: 0; right: 0;
+    width: 5px; height: 100%;
+    cursor: e-resize; /* Курсор изменения ширины */
+}
+
+#resizer-b {
+    bottom: 0; left: 0;
+    width: 100%; height: 5px;
+    cursor: s-resize; /* Курсор изменения высоты */
+}
+
+#resizer-rb {
+    position: fixed;
+    bottom: 0; right: 0;
+    width: 15px; height: 15px;
+    cursor: se-resize; /* Курсор изменения угла */
+    z-index: 10001;
+}
