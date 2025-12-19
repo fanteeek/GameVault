@@ -76,10 +76,11 @@ class Bridge:
         result = self._window.create_file_dialog(webview.FileDialog.FOLDER)
         
         if result:
-            selected_path = result[0]
+            selected_path = os.path.normpath(result[0])
             # Добавляем в настройки через ConfigService
             current_paths = self._config.get("non_steam_paths", [])
-            if selected_path not in current_paths:
+            
+            if not any(os.path.normpath(p).lower() == selected_path.lower() for p in current_paths):
                 current_paths.append(selected_path)
                 self._config.set("non_steam_paths", current_paths)
                 return {"status": "success", "path": selected_path}
@@ -125,12 +126,16 @@ class Bridge:
     
     def remove_folder(self, path: str):
         current = self._config.get("non_steam_paths", [])
-        print(current)
-        print(path)
-        if path in current:
-            current.remove(path)
-            self._config.set("non_steam_paths", current)
+        target_path = os.path.normpath(path)
+        new_paths = [
+            p for p in current
+            if os.path.normpath(p).lower() != target_path.lower()
+        ]
+        
+        if len(new_paths) < len(current):
+            self._config.set("non_steam_paths", new_paths)
             return True
+        
         return False
 
     def get_settings(self):
