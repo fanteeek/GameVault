@@ -25,3 +25,4 @@ venv.bak/
 
 .obsidian
 backups/
+settings.json
