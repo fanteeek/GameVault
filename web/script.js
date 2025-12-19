@@ -9,6 +9,7 @@ window.addEventListener('pywebviewready', function() {
     console.log('API готово');
     loadGames();
     initResizing();
+    initTitlebar();
 });
 
 function initResizing() {
@@ -435,6 +436,25 @@ function requestPlay() {
     if (selectedGameId) {
         pywebview.api.play_game(selectedGameId).then(success => {
             if (!success) alert("Не удалось запустить игру. Проверьте путь к исполняемому файлу.");
+        });
+    }
+}
+
+// Функция переключения иконки и вызова максимизации
+function handleMaximize() {
+    pywebview.api.toggle_maximize().then(isMaximized => {
+        const icon = document.getElementById('max-icon');
+        // Меняем иконку: квадрат для обычного окна, "двойной квадрат" для развернутого
+        icon.innerText = isMaximized ? 'filter_none' : 'crop_square';
+    });
+}
+
+// Добавляем обработчик двойного клика на заголовок
+function initTitlebar() {
+    const dragRegion = document.getElementById('drag-region');
+    if (dragRegion) {
+        dragRegion.addEventListener('dblclick', () => {
+            handleMaximize();
         });
     }
 }

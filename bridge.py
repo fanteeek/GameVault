@@ -20,7 +20,19 @@ class Bridge:
         self._resolver = PathResolver(self._steam)
         self._scanner = GameScanner(self._steam, self._config, self._resolver)
         self._window = None
+        self._is_maximized = False
 
+    # Window Controls
+    def toggle_maximize(self):
+        if self._window:
+            if self._is_maximized:
+                self._window.restore()
+                self._is_maximized = False
+            else:
+                self._window.maximize()
+                self._is_maximized = True
+            return self._is_maximized
+    
     def set_window(self, window):
         self._window = window
 
@@ -37,6 +49,8 @@ class Bridge:
     def resize_window(self, width: int, height: int):
         if self._window:
             self._window.resize(width, height)
+    
+    # Backup Logic
     
     def start_backup(self, game_id: str):
         # 1. Находим данные игры

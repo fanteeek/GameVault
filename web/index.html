@@ -11,8 +11,17 @@
     <div id="titlebar" class="pywebview-drag-region">
         <div id="drag-region">GameVault</div>
         <div id="window-controls">
-            <button onclick="pywebview.api.minimize_window()">—</button>
-            <button onclick="pywebview.api.close_window()" class="close-btn">×</button>
+            <button onclick="pywebview.api.minimize_window()">
+                <span class="material-symbols-rounded">remove</span>
+            </button>
+
+            <button onclick="handleMaximize()" id="maximize-btn">
+                <span class="material-symbols-rounded" id="max-icon">crop_square</span>
+            </button>
+            
+            <button onclick="pywebview.api.close_window()" class="close-btn">
+                <span class="material-symbols-rounded">close</span>
+            </button>
         </div>
     </div>
 
@@ -20,6 +29,10 @@
         <!-- Боковая панель (Sidebar) -->
         <aside id="sidebar">
             <div class="nav-section">
+                <div class="profile">
+                    <div class="profile-img"></div>
+                    <span>Profile Name</span>
+                </div>
                 <button id="nav-home" class="nav-btn active" onclick="showDashboard()">
                     <span class="material-symbols-rounded">home</span> Главная
                 </button>
@@ -75,12 +88,10 @@
                         <div id="game-info">
                             <img id="game-logo" src="" alt="">
                             <h1 id="game-title-fallback"></h1>
-                            
                             <div id="game-badges">
                                 <span id="source-badge" class="game-badge"></span>
                                 <p id="active-game-details" class="game-badge"></p>
                             </div>
-
                             <div id="action-bar">
                                 <div class="action-group">
                                     <button class="primary-btn" id="play-btn" onclick="requestPlay()">
