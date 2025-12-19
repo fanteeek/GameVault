@@ -231,6 +231,7 @@ body {
     text-align: left;
     border-radius: 5px;
     cursor: pointer;
+    transition: all 0.2s ease-out;
 }
 
 .nav-btn.active { background: var(--overlay); color: var(--iris); border-left: 3px solid var(--iris); padding-left: 7px; }
@@ -356,7 +357,7 @@ body {
 /* Общий стиль кнопок */
 .primary-btn, .secondary-btn {
     border: none;
-    padding: 10px 20px;
+    padding: 10px 16px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
@@ -373,34 +374,22 @@ body {
 .primary-btn {
     background: var(--iris);
     color: var(--base);
-    /* padding: 12px 24px; */
-    /* font-weight: bold; */
 }
-
-/* .primary-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 0 20px var(--iris);
-} */
 
 .primary-btn:hover {
-    background: var(--foam); /* Смена цвета на более светлый (голубоватый) */
-    transform: translateY(-2px); /* Легкий подъем вверх */
+    background: var(--foam); 
+    transform: translateY(-2px);
     
-    /* Многослойное свечение:
-       1. Ближний яркий ореол
-       2. Дальнее мягкое рассеивание */
-    box-shadow: 0 0 15px rgba(196, 167, 231, 0.5), /* Цвет Iris с прозрачностью */
-                0 0 30px rgba(156, 207, 216, 0.2); /* Цвет Foam для объема */
+    box-shadow: 0 0 15px rgba(196, 167, 231, 0.5),
+                0 0 30px rgba(156, 207, 216, 0.2);
 }
 
-/* Эффект при нажатии (кнопка "вжимается") */
 .primary-btn:active {
     transform: translateY(0);
     box-shadow: 0 0 5px rgba(196, 167, 231, 0.8);
     filter: brightness(0.9);
 }
 
-/* Дополнительно: если кнопка выключена (в процессе бэкапа) */
 .primary-btn:disabled {
     background: var(--muted);
     box-shadow: none;
@@ -409,7 +398,6 @@ body {
     opacity: 0.7;
 }
 
-/* Вторичная кнопка (Папка игры) */
 .secondary-btn {
     background-color: var(--overlay);
     color: var(--text);
@@ -421,7 +409,6 @@ body {
     border-color: var(--subtle);
 }
 
-/* Иконки внутри кнопок (опционально) */
 .btn-icon {
     font-size: 16px;
 }
@@ -448,7 +435,7 @@ body {
 
 .stat-card {
     background: var(--surface);
-    padding: 20px 40px;
+    padding: 14px 32px;
     border-radius: 12px;
     border: 1px solid var(--highlight-high);
     min-width: 180px;
