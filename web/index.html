@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>SManager</title>
+    <title>GameVault</title>
 </head>
 <body>
     <!-- Кастомный Titlebar для перетаскивания окна и управления -->
     <div id="titlebar" class="pywebview-drag-region">
-        <div id="drag-region">SManager</div>
+        <div id="drag-region">GameVault</div>
         <div id="window-controls">
             <button onclick="pywebview.api.minimize_window()">—</button>
             <button onclick="pywebview.api.close_window()" class="close-btn">×</button>
@@ -20,8 +20,8 @@
         <!-- Боковая панель (Sidebar) -->
         <aside id="sidebar">
             <div class="nav-section">
-                <button class="nav-btn active">Главная</button>
-                <button class="nav-btn">Редактор</button>
+                <button id="nav-home" class="nav-btn active" onclick="showDashboard()">Главная</button>
+                <button id="nav-editor" class="nav-btn" onclick="showEditor()">Редактор</button>
             </div>           
             <div class="library-header">
                 <span>БИБЛИОТЕКА</span>
@@ -37,38 +37,54 @@
 
         <!-- Основной контент -->
         <main id="main-content">
-            <div id="hero-section">
-                <!-- Контент поверх фона -->
-                <div id="hero-content">
-                    <div id="game-info">
-                        <img id="game-logo" src="" alt=""> <!-- Логотип вместо обычного текста H1 -->
-                        <h1 id="game-title-fallback"></h1> <!-- Текст, если логотипа нет -->
-                                                    
-                        <div id="game-badges">
-                            <span id="source-badge" class="game-badge"></span>
-                            <p id="active-game-details" class="game-badge"></p>
-                        </div>
+            <div id="dashboard-view">
+                <h1 class="iris-text">GameVault</h1>
+                <p class="muted-text">Добро пожаловать. Выберите игру из списка слева, чтобы начать работу с бэкапами.</p>
+                
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <span id="stat-total-games">0</span>
+                        <label>Игр в библиотеке</label>
+                    </div>
+                    <div class="stat-card">
+                        <span id="stat-backup-count">?</span>
+                        <label>Бэкапов создано</label>
+                    </div>
+                </div>
+            </div>
 
-                        <div id="action-bar">
-                            <div class="action-group">
-                                <button class="primary-btn" id="backup-btn" onclick="requestBackup()">
-                                    <span class="btn-icon">📦</span> BACKUP
-                                </button>
-                                <button class="secondary-btn" id="open-folder-btn" onclick="openGameFolder()">
-                                    <span class="btn-icon">📂</span> Папка игры
-                                </button>
+            <!-- Блок игры (скрыт по умолчанию) -->
+            <div id="game-view" style="display: none;">
+                <div id="hero-section">
+                    <div id="hero-content">
+                        <div id="game-info">
+                            <img id="game-logo" src="" alt="">
+                            <h1 id="game-title-fallback"></h1>
+                            
+                            <div id="game-badges">
+                                <span id="source-badge" class="game-badge"></span>
+                                <p id="active-game-details" class="game-badge"></p>
+                            </div>
+
+                            <div id="action-bar">
+                                <div class="action-group">
+                                    <button class="primary-btn" id="backup-btn" onclick="requestBackup()">
+                                        <span class="btn-icon">📦</span> BACKUP
+                                    </button>
+                                    <button class="secondary-btn" id="open-folder-btn" onclick="openGameFolder()">
+                                        <span class="btn-icon">📂</span> Папка игры
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div id="progress-container" style="display: none;">
-                <div id="progress-text">Создание бэкапа...</div>
-                <div id="progress-bar-bg">
-                    <div id="progress-bar-fill"></div>
+
+                <div id="progress-container" style="display: none;">
+                    <div id="progress-text">Создание архива...</div>
+                    <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
                 </div>
             </div>
-            <!-- ... остальной контент (прогресс бар и т.д.) ... -->
         </main>
 
     </div>

@@ -8,84 +8,137 @@ window.addEventListener('pywebviewready', function() {
 });
 
 function loadGames() {
+    const listContainer = document.getElementById('game-list');
+    listContainer.classList.add('loading');
+    
     const refreshBtn = document.getElementById('refresh-btn');
     if (refreshBtn) refreshBtn.classList.add('spinning'); // Можно добавить анимацию вращения
 
 
     // Вызываем метод из bridge.py
     pywebview.api.get_games().then(games => {
-        const listContainer = document.getElementById('game-list');
-        listContainer.innerHTML = '';
-        
-        // Разделяем игры на группы
-        const steamGames = games.filter(g => g.source === 'steam');
-        const localGames = games.filter(g => g.source === 'local');
+        // Небольшая искусственная задержка для красоты (300мс)
+        setTimeout(() => {
+            listContainer.innerHTML = '';
+            
+            // Группировка (код из прошлого шага) ...
+            const steamGames = games.filter(g => g.source === 'steam');
+            const localGames = games.filter(g => g.source === 'local');
 
-        const renderGroup = (title, groupGames) => {
-            if (groupGames.length > 0) {
-                const header = document.createElement('div');
-                header.className = 'list-section-title';
-                header.innerText = title;
-                listContainer.appendChild(header);
+            const renderGroup = (title, groupGames) => {
+                if (groupGames.length > 0) {
+                    const header = document.createElement('div');
+                    header.className = 'list-section-title';
+                    header.innerText = title;
+                    listContainer.appendChild(header);
 
-                groupGames.forEach(game => {
-                    const btn = document.createElement('button');
-                    btn.className = 'nav-btn';
-                    btn.innerText = game.name;
-                    btn.onclick = () => selectGame(game);
-                    listContainer.appendChild(btn);
-                });
-            }
-        };
+                    groupGames.forEach(game => {
+                        const btn = document.createElement('button');
+                        btn.className = 'nav-btn';
+                        btn.innerText = game.name;
+                        btn.onclick = (e) => selectGame(game, e.target); 
+                        listContainer.appendChild(btn);
+                    });
+                }
+            };
 
-        renderGroup('Steam', steamGames);
-        renderGroup('Локальные', localGames);
+            renderGroup('Steam', steamGames);
+            renderGroup('Локальные', localGames);
 
-        if (refreshBtn) refreshBtn.classList.remove('spinning');
+            // Обновляем статистику на Дашборде
+            const statGames = document.getElementById('stat-total-games');
+            if (statGames) statGames.innerText = games.length;
+
+            // 2. Убираем затухание
+            listContainer.classList.remove('loading');
+        }, 300);
     });
 }
 
-function selectGame(game) {
-    const hero = document.getElementById('hero-section');
-    const logo = document.getElementById('game-logo');
-    const titleFallback = document.getElementById('game-title-fallback');
-    const details = document.getElementById('active-game-details');
+function showEditor() {
+    setActiveNav('nav-editor');
+    alert("Редактор базы данных в разработке...");
+}
+
+function showDashboard() {
+    // 1. Переключаем видимость
+    document.getElementById('dashboard-view').style.display = 'flex';
+    document.getElementById('game-view').style.display = 'none';
+
+    // 2. Управляем активным состоянием кнопок
+    setActiveNav('nav-home');
     
+    // 3. Сбрасываем ID выбранной игры, чтобы случайно не сделать бэкап "ничего"
+    selectedGameId = null;
+    activeInstallPath = null;
+}
+
+function setActiveNav(activeId) {
+    // Убираем класс active у всех кнопок в сайдбаре
+    const allBtns = document.querySelectorAll('.nav-btn');
+    allBtns.forEach(btn => btn.classList.remove('active'));
+
+    // Добавляем класс active нужной кнопке (если передали ID)
+    if (activeId) {
+        const activeBtn = document.getElementById(activeId);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+}
+
+function selectGame(game, element) {
+    document.getElementById('dashboard-view').style.display = 'none';
+    document.getElementById('game-view').style.display = 'block'
+    // Подсвечиваем выбранную игру в списке
+    setActiveNav(null); // Сначала снимаем подсветку с "Главной" и "Редактора"
+
+    if (element) {
+        element.classList.add('active');
+    }
+
+    // const gameView = document.getElementById('game-view');
+    // gameView.style.display = 'block';
+    // gameView.style.animation = 'none'; // Сброс анимации
+    // gameView.offsetHeight; // "Взлом" для перезапуска анимации
+    // gameView.style.animation = 'fadeIn 0.5s ease';
+
     console.log("Выбрана игра:", game);
     selectedGameId = game.id;
     activeInstallPath = game.install_path;
 
+    const hero = document.getElementById('hero-section');
+    const logo = document.getElementById('game-logo');
+    const titleFallback = document.getElementById('game-title-fallback');
+    const details = document.getElementById('active-game-details');
     const sourceBadge = document.getElementById('source-badge');
-    sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
 
     hero.style.opacity = '0';
     logo.style.display = 'none';
     logo.scr = '';
-    titleFallback.innerText = '';
 
     setTimeout(() => {
-        hero.style.backgroundImage = `url('https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg')`;
-        
-        const img = new Image();
-        img.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg`;
-        img.onload = () => { hero.style.opacity = '1'; };
-        
-        // 3. Работа с логотипом
         if (game.steam_id) {
+            hero.style.backgroundImage = `url('https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg')`;
             logo.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
-            logo.onerror = () => {
-                logo.style.display = 'none';
-                titleFallback.innerText = game.name;
-            };
-            logo.onload = () => {
-                logo.style.display = 'block';
-            };
+            const img = new Image();
+            img.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg`;
+            img.onload = () => { hero.style.opacity = '1'; };
         } else {
-            titleFallback.innerText = game.name;
+            hero.style.backgroundImage = 'none';
+            hero.style.backgroundColor = 'var(--overlay)';
+            hero.style.opacity = '1';
         }
 
-        details.innerText = `Steam ID: ${game.steam_id || 'Non-Steam'}`;
-    
+        logo.onerror = () => {
+            logo.style.display = 'none';
+            titleFallback.innerText = game.name;
+        };
+        logo.onload = () => {
+            logo.style.display = 'block';
+            titleFallback.innerText = '';
+        };
+
+        sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
+        details.innerText = `ID: ${game.id} | Path: ${game.install_path}`;
     }, 150);
 
 }
