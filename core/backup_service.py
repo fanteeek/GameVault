@@ -3,21 +3,21 @@ import datetime
 from pathlib import Path
 from typing import List, Callable
 
+from core.file_utils import FileUtils
+
 class BackupService:
     @staticmethod
-    def create_zip(
-        game_name: str, 
-        source_paths: List[str], 
-        destination_root: str, 
-        progress_callback: Callable[[float], None]
-    ) -> str:
-        # Создаем папку назначения, если её нет
-        dest_dir = Path(destination_root) / game_name
+    def create_zip(game_name: str, source_paths: List[str], destination_root: str, progress_callback: Callable[[float], None]) -> str:
+        # 1. Генерируем безопасное имя один раз
+        safe_name = FileUtils.sanitize_name(game_name)
+        
+        # 2. Путь к папке
+        dest_dir = Path(destination_root) / safe_name
         dest_dir.mkdir(parents=True, exist_ok=True)
 
-        # Формируем имя архива: Название_Дата_Время.zip
+        # 3. Путь к ZIP-файлу (обязательно используем safe_name здесь тоже!)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        zip_name = f"{game_name}_{timestamp}.zip"
+        zip_name = f"{safe_name}_{timestamp}.zip" # ИСПОЛЬЗУЕМ safe_name
         zip_path = dest_dir / zip_name
 
         # Собираем все файлы для подсчета прогресса
