@@ -431,6 +431,14 @@ function closeHistoryModal() {
     setTimeout(() => modal.style.display = 'none', 400);
 }
 
+function requestPlay() {
+    if (selectedGameId) {
+        pywebview.api.play_game(selectedGameId).then(success => {
+            if (!success) alert("Не удалось запустить игру. Проверьте путь к исполняемому файлу.");
+        });
+    }
+}
+
 // Закрытие модалки при клике вне контента
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
