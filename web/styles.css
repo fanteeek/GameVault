@@ -14,7 +14,41 @@
     --highlight-high: #524f67;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Segoe UI', sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: var(--highlight-high) transparent;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Глобальный стиль скроллбара для всего приложения */
+::-webkit-scrollbar {
+    width: 6px;  /* Ширина вертикального скролла */
+    height: 6px; /* Высота горизонтального (если появится) */
+}
+
+/* Фон дорожки скроллбара */
+::-webkit-scrollbar-track {
+    background: transparent; 
+}
+
+/* Сама "ручка" (ползунок) */
+::-webkit-scrollbar-thumb {
+    background: var(--highlight-high);
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+/* Цвет ползунка при наведении */
+::-webkit-scrollbar-thumb:hover {
+    background: var(--iris);
+}
 
 body {
     background-color: var(--base);
@@ -107,24 +141,6 @@ body {
 
 /* Game List */
 
-#game-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-#game-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#game-list::-webkit-scrollbar-thumb {
-    background: var(--highlight-high);
-    border-radius: 10px;
-    transition: background 0.2s;
-}
-
-#game-list::-webkit-scrollbar-thumb:hover {
-    background: var(--iris);
-}
-
 /* Настройка контейнера списка */
 #game-list {
     flex-grow: 1;
@@ -140,14 +156,6 @@ body {
     flex-direction: column;
     overflow-y: auto;
     scrollbar-gutter: stable; /* Резервирует место под скроллбар, чтобы контент не прыгал */
-}
-
-#main-content::-webkit-scrollbar {
-    width: 6px;
-}
-#main-content::-webkit-scrollbar-thumb {
-    background: var(--highlight-high);
-    border-radius: 10px;
 }
 
 /* Лоадер */
@@ -192,7 +200,7 @@ body {
 
 #add-folder-btn:hover { color: var(--love); }
 
-#refresh-btn, #settings-btn {
+.simple-icon-btn {
     background: transparent;
     border: none;
     color: var(--muted);
@@ -201,7 +209,7 @@ body {
     transition: color 0.2s;
 }
 
-#refresh-btn:hover, #settings-btn:hover { color: var(--iris); }
+.simple-icon-btn:hover { color: var(--iris); }
 
 /* Стиль для разделителей групп в списке */
 .list-section-title {
@@ -262,16 +270,6 @@ body {
     align-items: center;
 }
 
-.primary-btn {
-    background: var(--iris);
-    color: var(--base);
-    border: none;
-    padding: 12px 24px;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
 #game-badges {
     display: flex;
     gap: 4px;
@@ -314,7 +312,6 @@ body {
     background-size: cover;
     background-position: center;
     transition: opacity 0.3s ease-in-out;
-    margin-bottom: 20px;
 }
 
 #hero-content {
@@ -367,27 +364,49 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 /* Главная кнопка (Backup) */
 .primary-btn {
-    background-color: var(--iris);
+    background: var(--iris);
     color: var(--base);
+    /* padding: 12px 24px; */
+    /* font-weight: bold; */
 }
+
+/* .primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 20px var(--iris);
+} */
 
 .primary-btn:hover {
-    background-color: var(--foam);
-    transform: translateY(-1px);
+    background: var(--foam); /* Смена цвета на более светлый (голубоватый) */
+    transform: translateY(-2px); /* Легкий подъем вверх */
+    
+    /* Многослойное свечение:
+       1. Ближний яркий ореол
+       2. Дальнее мягкое рассеивание */
+    box-shadow: 0 0 15px rgba(196, 167, 231, 0.5), /* Цвет Iris с прозрачностью */
+                0 0 30px rgba(156, 207, 216, 0.2); /* Цвет Foam для объема */
 }
 
+/* Эффект при нажатии (кнопка "вжимается") */
 .primary-btn:active {
     transform: translateY(0);
+    box-shadow: 0 0 5px rgba(196, 167, 231, 0.8);
+    filter: brightness(0.9);
 }
 
+/* Дополнительно: если кнопка выключена (в процессе бэкапа) */
 .primary-btn:disabled {
-    background-color: var(--muted);
+    background: var(--muted);
+    box-shadow: none;
+    transform: none;
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* Вторичная кнопка (Папка игры) */
@@ -449,28 +468,42 @@ body {
     pointer-events: none;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 #game-stats-row {
     margin: 20px 0;
-    padding: 15px;
+    display: flex;       /* Включаем флекс */
+    gap: 30px;           /* Расстояние между блоками */
+    align-items: flex-start; /* ВАЖНО: блоки не будут растягиваться вниз */
+    padding: 20px;
     background: var(--surface);
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid var(--highlight-high);
 }
 
-.info-block label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; }
-.info-block span { font-size: 18px; color: var(--foam); font-weight: bold; }
+.info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 
-#backup-history-section { margin-top: 30px; }
+.info-block label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.info-block span {
+    font-size: 20px;
+    color: var(--foam);
+    font-weight: bold;
+}
+
 #history-list {
     margin: 10px 0;
-    max-height: 200px;
     overflow-y: auto;
+    max-height: 350px;
 }
+
 .history-item {
     display: flex;
     justify-content: space-between;
@@ -478,8 +511,8 @@ body {
     border-bottom: 1px solid var(--overlay);
     font-size: 13px;
 }
+
 .history-item:hover { background: var(--overlay); }
-.text-btn { background: none; border: none; color: var(--iris); cursor: pointer; margin-top: 10px; }
 
 /* Settings Modal */
 
@@ -490,7 +523,6 @@ body {
     background: rgba(0,0,0,0.8);
     z-index: 1000;
     justify-content: center; align-items: center;
-    animation: fadeIn 0.5s ease;
 }
 .modal-content {
     background: var(--surface);
@@ -498,6 +530,7 @@ body {
     border-radius: 12px;
     width: 500px;
     border: 1px solid var(--highlight-high);
+    animation: fadeIn 0.4s ease;
 }
 
 .modal-header {
@@ -512,6 +545,12 @@ body {
     gap: 14px;
 }
 
+.modal.closing {
+    animation: fadeOut 0.4s ease forwards; /* forwards заставляет элемент замереть в финальном (прозрачном) кадре */
+}
+
+.close-modal { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+
 .path-item {
     display: flex;
     justify-content: space-between;
@@ -522,21 +561,6 @@ body {
     margin-bottom: 8px;
     border: 1px solid var(--highlight-high);
 }
-
-.path-item .delete-btn {
-    background: none;
-    border: none;
-    color: var(--love);
-    font-size: 20px;
-    cursor: pointer;
-    line-height: 1;
-}
-
-.path-item .delete-btn:hover {
-    color: var(--text);
-}
-
-.close-modal { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
 
 /* Зоны захвата */
 .resizer {
@@ -563,4 +587,17 @@ body {
     width: 15px; height: 15px;
     cursor: se-resize; /* Курсор изменения угла */
     z-index: 10001;
+}
+
+
+/* ANINMATIONS */
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
 }

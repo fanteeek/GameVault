@@ -28,10 +28,10 @@
             <div class="library-header">
                 <span>БИБЛИОТЕКА</span>
                 <div class="header-actions">
-                    <button onclick="loadGames()" id="refresh-btn" title="Обновить">
+                    <button onclick="loadGames()" class="simple-icon-btn" title="Обновить">
                         <span class="material-symbols-rounded">refresh</span>
                     </button>
-                    <button id="settings-btn" onclick="openSettings()">
+                    <button class="simple-icon-btn" onclick="openSettings()">
                         <span class="material-symbols-rounded">settings</span>
                     </button>
                     <!-- <button onclick="addPath()" id="add-folder-btn" title="Добавить папку">
@@ -105,22 +105,23 @@
 
                 <div id="game-stats-row">
                     <div class="info-block">
+                        <label>История бэкапов</label>
+                        <button class="secondary-btn" onclick="openHistoryModal()">
+                            <span class="material-symbols-rounded">history</span>
+                            Посмотреть
+                        </button>
+                    </div>
+                    <div class="info-block">
                         <label>Размер сохранений</label>
                         <span id="save-size">0 KB</span>
                     </div>
-                </div>
-
-                <div id="backup-history-section">
-                    <h3>История бэкапов</h3>
-                    <div id="history-list">
-                        <!-- Сюда попадут файлы .zip -->
-                    </div>
-                    <button class="text-btn" onclick="openBackupFolder()">Открыть папку с бэкапами</button>
                 </div>
             </div>
         </main>
 
     </div>
+
+    <!-- Modals -->
 
     <div id="settings-modal" class="modal">
         <div class="modal-content">
@@ -136,7 +137,31 @@
         </div>
     </div>
 
-        <!-- Зоны изменения размера -->
+        
+    <!-- Модальное окно истории бэкапов -->
+    <div id="history-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>История бэкапов</h2>
+                <button onclick="closeHistoryModal()" class="close-modal">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="history-list">
+                    <!-- Сюда JS отрисует список -->
+                </div>
+                <div style="margin-top: 14px; display: flex; gap: 10px;">
+                    <button class="primary-btn" onclick="openBackupFolder()">
+                        <span class="material-symbols-rounded">folder_open</span> Открыть папку
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Зоны изменения размера -->
     <div id="resizer-r" class="resizer"></div>
     <div id="resizer-b" class="resizer"></div>
     <div id="resizer-rb" class="resizer-corner"></div>

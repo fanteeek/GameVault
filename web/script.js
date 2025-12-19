@@ -2,6 +2,7 @@ let selectedGameId = null;
 let activeInstallPath = null;
 let activeGameName = null;
 let isResizing = false;
+let currentBackups = [];
 
 // Ждем загрузки pywebview API
 window.addEventListener('pywebviewready', function() {
@@ -222,28 +223,36 @@ function updateGameUI(game, details) {
 
     // Установка текста и бэйджа
     sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
-    detailsText.innerText = `ID: ${game.id} | Path: ${game.install_path}`;
+    detailsText.innerText = `ID: ${game.id}`;
 
     // Обновление размера и истории бэкапов (из данных details)
     if (details) {
         document.getElementById('save-size').innerText = details.size;
+        currentBackups = details.backups;
         renderHistory(details.backups);
     }
 }
 
 function renderHistory(backups) {
     const list = document.getElementById('history-list');
-    list.innerHTML = backups.length ? '' : '<p class="muted-text">Бэкапов еще нет</p>';
-    
+    list.innerHTML = '';
+
+    if (!backups || backups.length === 0) {
+        list.innerHTML = '<p class="muted-text">Бэкапов еще не создано.</p>';
+        return;
+    }
+
     backups.forEach(b => {
         const item = document.createElement('div');
         item.className = 'history-item';
         item.innerHTML = `
             <div class="history-info">
                 <span class="history-name">${b.name}</span>
-                <span class="history-meta">${b.size} | ${new Date(b.date * 1000).toLocaleDateString()}</span>
+                <span class="history-meta">${b.size} • ${new Date(b.date * 1000).toLocaleDateString()}</span>
             </div>
-            <button class="delete-btn" onclick="deleteBackup('${b.path.replace(/\\/g, '/')}')">🗑️</button>
+            <button class="simple-icon-btn" onclick="deleteBackup('${b.path.replace(/\\/g, '/')}')">
+                <span class="material-symbols-rounded">delete</span>
+            </button>
         `;
         list.appendChild(item);
     });
@@ -301,7 +310,7 @@ function onBackupComplete(result) {
     alert("Бэкап завершен: " + result);
     
     backupBtn.disabled = false;
-    backupBtn.innerText = 'BACKUP';
+    backupBtn.innerHTML = '<span class="material-symbols-rounded">inventory_2</span> BACKUP';
     document.getElementById('progress-bar-fill').style.width = '0%';
     document.getElementById('progress-container').style.display = 'none';
 }
@@ -366,7 +375,14 @@ function openSettings() {
 
 // Закрытие окна
 function closeSettings() {
-    document.getElementById('settings-modal').style.display = 'none';
+    const modal = document.getElementById('settings-modal');
+    modal.classList.add('closing');
+    modal.onanimationend = () => {
+        if (modal.classList.contains('closing')) {
+            modal.style.display = 'none';
+            modal.classList.remove('closing');
+        }
+    };
 }
 
 // Отрисовка списка путей в настройках
@@ -385,7 +401,7 @@ function renderSettings(settings) {
             <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 350px;" title="${path}">
                 ${path}
             </span>
-            <button class="delete-btn" onclick="removePath('${path.replace(/\\/g, '/')}')">
+            <button class="simple-icon-btn" onclick="removePath('${path.replace(/\\/g, '/')}')">
                 <span class="material-symbols-rounded">delete</span>
             </button>
         `;
@@ -393,11 +409,46 @@ function renderSettings(settings) {
     });
 }
 
+// Функция открытия модалки истории
+function openHistoryModal() {
+    const modal = document.getElementById('history-modal');
+    renderHistory(currentBackups); // Отрисовываем то, что уже загружено
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('show'), 10);
+}
+
+function closeHistoryModal() {
+    const modal = document.getElementById('history-modal');
+    modal.classList.add('closing');
+    modal.onanimationend = () => {
+        if (modal.classList.contains('closing')) {
+            modal.style.display = 'none';
+            modal.classList.remove('closing');
+        }
+    };
+
+    modal.classList.remove('show');
+    setTimeout(() => modal.style.display = 'none', 400);
+}
+
 // Закрытие модалки при клике вне контента
 window.onclick = function(event) {
-    const modal = document.getElementById('settings-modal');
-    if (event.target == modal) {
-        closeSettings();
+    if (event.target.classList.contains('modal')) {
+        // Мы ищем, какая именно функция должна сработать. 
+        // Если ID совпадает с settings-modal — закрываем настройки, и т.д.
+        if (event.target.id === 'settings-modal') closeSettings();
+        if (event.target.id === 'history-modal') closeHistoryModal();
     }
 }
+
+window.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        // Проверяем, какое окно открыто (через display === 'flex') и закрываем его
+        const settingsModal = document.getElementById('settings-modal');
+        const historyModal = document.getElementById('history-modal');
+
+        if (settingsModal.style.display === 'flex') closeSettings();
+        if (historyModal.style.display === 'flex') closeHistoryModal();
+    }
+});
 
