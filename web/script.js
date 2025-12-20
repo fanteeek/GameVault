@@ -31,11 +31,17 @@ const Elements = {
     get progressContainer() { return document.getElementById('progress-container'); },
     get progressBar() { return document.getElementById('progress-bar-fill'); },
     get maxIcon() { return document.getElementById('max-icon'); },
+    get version() { return document.getElementById('app-version'); },
 };
 
 const App = {
-    init() {
+    async init() {
         console.log('API готово');
+
+        const version = await pywebview.api.get_app_version();
+        const versionEl = Elements.version;
+        if (versionEl) versionEl.innerText = version;
+
         App.loadLibrary();
         WindowControl.initResizing();
         WindowControl.initTitlebar();
