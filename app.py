@@ -14,7 +14,7 @@ def main():
         title='SManager',
         url=html_path,
         js_api=api,
-        width=1100,
+        width=1250,
         height=700,
         frameless=True,      # Убираем рамки Windows
         easy_drag=False      # Отключаем стандартное перетаскивание (сделаем свое)
