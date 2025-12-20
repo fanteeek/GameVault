@@ -182,7 +182,6 @@ body {
 }
 
 .sidebar {
-    /* Фиксируем базу, чтобы flex не мешал менять ширину */
     flex: 0 0 260px; 
     min-width: 200px;
     max-width: 500px;
@@ -194,35 +193,32 @@ body {
 }
 
 #sidebar-resizer {
-    width: 6px;             /* Ширина зоны захвата */
-    cursor: e-resize;     /* Курсор изменения ширины */
+    width: 6px;             
+    cursor: e-resize;     
     background: transparent;
-    flex: 0 0 6px;          /* Фиксируем ширину самого резайзера */
-    margin-left: -3px;      /* Сдвигаем на центр границы */
+    flex: 0 0 6px;          
+    margin-left: -3px;
     margin-right: -3px;
-    z-index: 100;           /* Поверх всего */
+    z-index: 100;
     transition: background 0.2s;
 }
 
-/* Подсветка при наведении, как в крутом софте */
 #sidebar-resizer:hover {
-    background: var(--iris); /* Твой цвет Rose Pine */
+    background: var(--iris);
     opacity: 0.5;
 }
 
-/* Класс-маска для body, чтобы при быстром движении мышь не "соскакивала" */
 body.resizing-active {
     cursor: col-resize !important;
-    user-select: none; /* Запрещаем выделять текст во время растягивания */
+    user-select: none;
 }
 
 /* Game List */
 
-/* Настройка контейнера списка */
 #game-list {
     flex-grow: 1;
     overflow-y: auto;
-    padding-right: 5px; /* Отступ, чтобы скроллбар не налезал на текст */
+    padding-right: 5px; 
 }
 
 #main-content {
