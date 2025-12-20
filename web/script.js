@@ -32,6 +32,8 @@ const Elements = {
     get progressBar() { return document.getElementById('progress-bar-fill'); },
     get maxIcon() { return document.getElementById('max-icon'); },
     get version() { return document.getElementById('app-version'); },
+    get sidebar() { return /** @type {HTMLElement} */ (document.querySelector('.sidebar')); },
+    get sidebarResizer() { return document.getElementById('sidebar-resizer'); },
 };
 
 const App = {
@@ -43,6 +45,7 @@ const App = {
         if (versionEl) versionEl.innerText = version;
 
         App.loadLibrary();
+        WindowControl.initSidebarResizer();
         WindowControl.initResizing();
         WindowControl.initTitlebar();
         App.bindGlobalEvents();
@@ -402,6 +405,44 @@ const Utils = {
 };
 
 const WindowControl = {
+    initSidebarResizer() {
+        const resizer = Elements.sidebarResizer;
+        const sidebar = Elements.sidebar;
+
+        if (!resizer || !sidebar) return;
+
+        // Восстанавливаем ширину из памяти сразу при инициализации
+        const savedWidth = localStorage.getItem('sidebar-width');
+        if (savedWidth) sidebar.style.flexBasis = savedWidth;
+
+        resizer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            document.body.classList.add('resizing-active');
+
+            const onMouseMove = (me) => {
+                // me.clientX — это расстояние от левого края окна
+                let newWidth = me.clientX;
+
+                // Ограничения
+                if (newWidth >= 200 && newWidth <= 500) {
+                    sidebar.style.flexBasis = newWidth + 'px';
+                }
+            };
+
+            const onMouseUp = () => {
+                document.body.classList.remove('resizing-active');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                
+                // Сохраняем результат в локальное хранилище браузера
+                localStorage.setItem('sidebar-width', sidebar.style.flexBasis);
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+    },
+
     initResizing() {
         const resizers = {
             'r': document.getElementById('resizer-r'),

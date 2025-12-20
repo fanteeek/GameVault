@@ -190,6 +190,7 @@ body {
     position: relative;
     background: var(--side);
     padding: 10px;
+    border-right: 1px solid var(--highlight-high);
 }
 
 #sidebar-resizer {
@@ -294,25 +295,6 @@ body.resizing-active {
     padding: 15px 10px 5px;
     text-transform: uppercase;
     letter-spacing: 1px;
-}
-
-.profile {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0px 10px;
-    padding: 10px;
-    background: rgba(196, 167, 231, 0.1);
-    border-radius: 10px;
-    border: 1px solid var(--highlight-high);
-}
-
-.profile-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: var(--overlay);
-    border: 1px solid var(--highlight-high);
 }
 
 /* Элементы интерфейса */
