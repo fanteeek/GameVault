@@ -10,6 +10,8 @@ from core.backup_service import BackupService
 from core.file_utils import FileUtils
 
 class Bridge:
+    VERSION = "0.0.3"
+    
     def __init__(self):
         from core.config import ConfigService
         from core.resolver import PathResolver
@@ -23,7 +25,9 @@ class Bridge:
         self._window = None
         self._is_maximized = False
         
-
+    def get_app_version(self):
+        return self.VERSION
+    
     # Window Controls
     def simple_restore(self):
         if self._is_maximized:
