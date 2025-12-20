@@ -7,23 +7,25 @@
     <title>GameVault</title>
 </head>
 <body>
-    <!-- Кастомный Titlebar для перетаскивания окна и управления -->
+    <!-- Titlebar -->
     <div id="titlebar" class="pywebview-drag-region">
-        <div class="title">GameVault</div>
+        <div style="display: flex; gap: 16px; align-items: center; margin-left: 10px;">
+            <div class="title">GameVault</div>
+            <div class="nav-section">
+                <button id="nav-home" class="nav-btn active" onclick="App.showDashboard()">
+                    <span class="material-symbols-rounded">home</span> Главная
+                </button>
+                <button id="nav-editor" class="nav-btn">Редактор</button>
+            </div>   
+        </div>
 
-        <div class="nav-section">
-            <button id="nav-home" class="nav-btn active" onclick="showDashboard()">
-                <span class="material-symbols-rounded">home</span> Главная
-            </button>
-            <button id="nav-editor" class="nav-btn" onclick="showEditor()">Редактор</button>
-        </div>   
-
+        <!-- Window Controls -->
         <div id="window-controls">
             <button onclick="pywebview.api.minimize_window()">
                 <span class="material-symbols-rounded">remove</span>
             </button>
 
-            <button onclick="handleMaximize()" id="maximize-btn">
+            <button onclick="WindowControl.toggleMaximize()" id="maximize-btn">
                 <span class="material-symbols-rounded" id="max-icon">crop_square</span>
             </button>
             
@@ -34,8 +36,8 @@
     </div>
 
     <div id="app-container">
-        <!-- Боковая панель (Sidebar) -->
-        <aside id="sidebar">
+        <!-- Sidebar -->
+        <aside class="sidebar">
             <div class="profile">
                     <div class="profile-img"></div>
                     <span>Profile Name</span>
@@ -43,20 +45,22 @@
             <div class="library-header">
                 <span>БИБЛИОТЕКА</span>
                 <div class="header-actions">
-                    <button onclick="loadGames()" class="simple-icon-btn" title="Обновить">
+                    <button onclick="App.loadLibrary()" class="simple-icon-btn" title="Обновить">
                         <span class="material-symbols-rounded">refresh</span>
                     </button>
-                    <button class="simple-icon-btn" onclick="openSettings()">
+                    <button class="simple-icon-btn">
                         <span class="material-symbols-rounded">settings</span>
                     </button>
                 </div>
             </div>
             <div id="game-list">
-                <!-- Сюда JS будет добавлять игры -->
+                <!-- Dynamic JS -->
             </div>
         </aside>
+        
+        <div id="sidebar-resizer"></div>
 
-        <!-- Основной контент -->
+        <!-- Main Content -->
         <main id="main-content">
             <div id="dashboard-view" class="view">
                 <div class="welcome-section">
@@ -82,50 +86,58 @@
                 </div>
             </div>
             
-            <!-- Индикатор загрузки (скрыт по умолчанию) -->
+            <!-- Indicator Loading -->
             <div id="game-loader" style="display: none;">
                 <div class="spinner"></div>
                 <p class="muted-text">Загрузка информации об игре...</p>
             </div>
-
-            <!-- 2. Обновленный Вид Игры (Action Dock) -->
+            
+            <!-- Game View -->
             <div id="game-view" class="view" style="display: none;">
                 <div id="hero-section">
+                    <div id="hero-bg"></div>
                     <div class="hero-content">
                         <img id="game-logo" src="" alt="">
                         <h1 id="game-title-fallback"></h1>
                         
-                        <div class="action-dock">
-                            <button class="btn-play" id="play-btn" onclick="requestPlay()">
-                                <span class="material-symbols-rounded">play_arrow</span> ИГРАТЬ
-                            </button>
-                            <button class="btn-secondary" onclick="requestBackup()" title="Backup">
-                                <span class="material-symbols-rounded">inventory_2</span>
-                            </button>
-                            <button class="btn-secondary" onclick="openGameFolder()" title="Папка игры">
-                                <span class="material-symbols-rounded">folder_open</span>
-                            </button>
-                            <button class="btn-secondary" onclick="openHistoryModal()" title="История">
-                                <span class="material-symbols-rounded">history</span>
-                            </button>
-                            <button class="btn-secondary" onclick="openWiki()" title="Wiki">
-                                <span class="material-symbols-rounded">language</span>
-                            </button>
+                        <div style="display: flex; gap: 6px;">
+                            <div class="action-dock">
+                                <button class="btn-play" id="play-btn" onclick="Actions.play()">
+                                    <span class="material-symbols-rounded">play_arrow</span> ИГРАТЬ
+                                </button>
+                                <button class="btn-secondary" onclick="Actions.backup()" title="Backup">
+                                    <span class="material-symbols-rounded">inventory_2</span> Backup
+                                </button>
+                                <button class="btn-secondary" onclick="Actions.openGameFolder()" title="Папка игры">
+                                    <span class="material-symbols-rounded">folder_open</span>
+                                </button>
+                                <button class="btn-secondary" onclick="UI.modals.open('history-modal')" title="История">
+                                    <span class="material-symbols-rounded">history</span>
+                                </button>
+                            </div>
+
+                            <div class="action-dock">
+                                <button class="btn-secondary" onclick="Actions.openWiki()" title="Wiki">
+                                    <span class="material-symbols-rounded">language</span>PCGamingWiki
+                                </button>
+                            </div>
                         </div>
+
                     </div>
                 </div>
-                    
+                
+                <!-- Backup Progress UI -->
                 <div id="progress-container" style="display: none;">
                     <div class="progress-info">
                         <span>Создание архива...</span>
-                        <span id="progress-percent">0%</span> <!-- Добавили ID здесь -->
+                        <span id="progress-percent">0%</span>
                     </div>
                     <div class="progress-track">
                         <div id="progress-bar-fill"></div>
                     </div>
                 </div>
 
-                <!-- Бейджи и ID -->
+                <!-- Badge + ID -->
                 <div id="game-stats-row">
                     <div class="info-block">
                         <label>Вес сохранений</label>
@@ -139,7 +151,7 @@
                     <div class="info-divider"></div>
                     <div class="info-block">
                         <label>Идентификатор</label>
-                        <span id="active-game-details" class="subtle-text">ID: 0000</span>
+                        <span id="active-game-details">ID: 0000</span>
                     </div>
                 </div>
             </div>
@@ -148,37 +160,37 @@
     </div>
 
     <!-- Modals -->
-
+    <!-- [MODAL] Settings -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Настройки</h2>
-                <button onclick="closeSettings()" class="close-modal">×</button>
+                <button onclick="UI.modals.close('close-modal')" class="close-modal">×</button>
             </div>
             <div class="modal-body">
                 <label>Папки для сканирования (Non-Steam):</label>
                 <div id="settings-path-list"></div>
-                <button class="primary-btn" onclick="addPath()">Добавить папку</button>
+                <button class="primary-btn" onclick="Actions.addPath()">Добавить папку</button>
             </div>
         </div>
     </div>
 
         
-    <!-- Модальное окно истории бэкапов -->
+    <!-- [MODAL] History backups -->
     <div id="history-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>История бэкапов</h2>
-                <button onclick="closeHistoryModal()" class="close-modal">
+                <button onclick="UI.modals.close('history-modal')" class="close-modal">
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
             <div class="modal-body">
                 <div id="history-list">
-                    <!-- Сюда JS отрисует список -->
+                    <!-- Dynamic JS -->
                 </div>
                 <div style="margin-top: 14px; display: flex; gap: 10px;">
-                    <button class="primary-btn" onclick="openBackupFolder()">
+                    <button class="primary-btn" onclick="Actions.openBackupFolder()">
                         <span class="material-symbols-rounded">folder_open</span> Открыть папку
                     </button>
                 </div>
@@ -187,7 +199,7 @@
     </div>
 
 
-    <!-- Зоны изменения размера -->
+    <!-- resizers -->
     <div id="resizer-r" class="resizer"></div>
     <div id="resizer-b" class="resizer"></div>
     <div id="resizer-rb" class="resizer-corner"></div>

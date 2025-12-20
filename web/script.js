@@ -1,79 +1,56 @@
-let selectedGameId = null;
-let activeInstallPath = null;
-let activeGameName = null;
-let isResizing = false;
-let currentBackups = [];
-const HERO_PLACEHOLDER = 'assets/hero_placeholder.jpg';
+// @ts-check
+/** @global @type {any} */
+var pywebview;
 
-// Ждем загрузки pywebview API
-window.addEventListener('pywebviewready', function() {
-    console.log('API готово');
-    loadGames();
-    initResizing();
-    initTitlebar();
-});
+const State = {
+    selectedGameId: null,
+    activeInstallPath: null,
+    activeGameName: null,
+    isResizing: false,
+    currentBackups: [],
+    currentView: 'dashboard',
+    HERO_PLACEHOLDER: 'assets/hero_placeholder.jpg'
+};
 
-function initResizing() {
-    const r = document.getElementById('resizer-r');
-    const b = document.getElementById('resizer-b');
-    const rb = document.getElementById('resizer-rb');
+const Elements = {
+    get dashboard() { return document.getElementById('dashboard-view'); },
+    get heroBg() { return document.getElementById('hero-bg') },
+    get heroSection() { return document.getElementById('hero-section') },
+    get gameView() { return document.getElementById('game-view'); },
+    get gameLogo() { return document.getElementById('game-logo'); },
+    get gameTitle() { return document.getElementById('game-title-fallback'); },
+    get gameSourceBadge() { return document.getElementById('source-badge'); },
+    get gameBackupSaveSize() { return document.getElementById('save-size'); },
+    get detailsText() { return document.getElementById('active-game-details'); },
+    get loader() { return document.getElementById('game-loader'); },
+    get backupBtn() { return document.getElementById('backup-btn'); },
+    get listContainer() { return document.getElementById('game-list'); },
+    get settingsModal() { return document.getElementById('settings-modal'); },
+    get historyModal() { return document.getElementById('history-modal'); },
+    get historyList() { return document.getElementById('history-list');},
+    get progressContainer() { return document.getElementById('progress-container'); },
+    get progressBar() { return document.getElementById('progress-bar-fill'); },
+    get maxIcon() { return document.getElementById('max-icon'); },
+};
 
-    const handleMouseDown = (e, direction) => {
-        isResizing = true;
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const startW = window.innerWidth;
-        const startH = window.innerHeight;
+const App = {
+    init() {
+        console.log('API готово');
+        App.loadLibrary();
+        WindowControl.initResizing();
+        WindowControl.initTitlebar();
+        App.bindGlobalEvents();
+    },
 
-        const onMouseMove = (moveEvent) => {
-            if (!isResizing) return;
+    async loadLibrary() {
+        App.showDashboard();
+        Elements.listContainer?.classList.add('loading');
 
-            let newW = startW;
-            let newH = startH;
-
-            if (direction === 'r' || direction === 'rb') {
-                newW = startW + (moveEvent.clientX - startX);
-            }
-            if (direction === 'b' || direction === 'rb') {
-                newH = startH + (moveEvent.clientY - startY);
-            }
-
-            // Ограничения минимального размера
-            if (newW < 800) newW = 800;
-            if (newH < 600) newH = 600;
-
-            pywebview.api.resize_window(newW, newH);
-        };
-
-        const onMouseUp = () => {
-            isResizing = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    };
-
-    r.addEventListener('mousedown', (e) => handleMouseDown(e, 'r'));
-    b.addEventListener('mousedown', (e) => handleMouseDown(e, 'b'));
-    rb.addEventListener('mousedown', (e) => handleMouseDown(e, 'rb'));
-}
-
-
-function loadGames() {
-    showDashboard();
-    const listContainer = document.getElementById('game-list');
-    listContainer.classList.add('loading');
-    
-    const refreshBtn = document.getElementById('refresh-btn');
-    if (refreshBtn) refreshBtn.classList.add('spinning'); // Можно добавить анимацию вращения
-
-
-    pywebview.api.get_games().then(games => {
+        const games = await pywebview.api.get_games();
+        
         setTimeout(() => {
-            listContainer.innerHTML = '';
-            
+            if (Elements.listContainer) Elements.listContainer.innerHTML = '';
+
             const steamGames = games.filter(g => g.source === 'steam');
             const localGames = games.filter(g => g.source === 'local');
 
@@ -82,456 +59,438 @@ function loadGames() {
                     const header = document.createElement('div');
                     header.className = 'list-section-title';
                     header.innerText = title;
-                    listContainer.appendChild(header);
+                    Elements.listContainer?.appendChild(header);
 
                     groupGames.forEach(game => {
                         const btn = document.createElement('button');
                         btn.className = 'nav-btn';
                         btn.innerText = game.name;
-                        btn.onclick = (e) => selectGame(game, e.target); 
-                        listContainer.appendChild(btn);
+                        btn.onclick = (e) => UI.selectGame(game, e.target); 
+                        Elements.listContainer?.appendChild(btn);
                     });
                 }
             };
 
             renderGroup('Steam', steamGames);
             renderGroup('Локальные', localGames);
-
-            listContainer.classList.remove('loading');
+            Elements.listContainer?.classList.remove('loading');
         }, 300);
-    });
-}
+    },
 
-function showEditor() {
-    setActiveNav('nav-editor');
-    alert("Редактор базы данных в разработке...");
-}
+    async showDashboard() {
+        State.currentView = 'dashboard';
+        Elements.dashboard && (Elements.dashboard.style.display = 'flex');
+        Elements.gameView && (Elements.gameView.style.display = 'none');
+        Elements.loader && (Elements.loader.style.display = 'none');
+        UI.setActiveNav('nav-home');
 
-async function showDashboard() {
-    document.getElementById('dashboard-view').style.display = 'flex';
-    document.getElementById('game-view').style.display = 'none';
-    setActiveNav('nav-home');
-
-    // Запрашиваем глобальную статистику из Python
-    const stats = await pywebview.api.get_dashboard_stats();
-    
-    document.getElementById('stat-total-games').innerText = stats.total_games;
-    document.getElementById('stat-total-size').innerText = stats.total_backups_size;
-}
-
-function setActiveNav(activeId) {
-    const allBtns = document.querySelectorAll('.nav-btn');
-    allBtns.forEach(btn => btn.classList.remove('active'));
-
-    if (activeId) {
-        const activeBtn = document.getElementById(activeId);
-        if (activeBtn) activeBtn.classList.add('active');
-    }
-}
-
-function preloadImage(url) {
-    return new Promise((resolve) => {
-        if (!url) return resolve(); 
-        const img = new Image();
-        img.src = url;
-        img.onload = resolve;
-        img.onerror = resolve; 
-    });
-}
-
-async function selectGame(game, element) {
-    document.getElementById('dashboard-view').style.display = 'none';
-    document.getElementById('game-view').style.display = 'none';
-    document.getElementById('game-loader').style.display = 'flex';
-
-    setActiveNav(null); 
-    if (element) element.classList.add('active');
-
-    selectedGameId = game.id;
-    activeGameName = game.name;
-    activeInstallPath = game.install_path;
-
-    const steamHeroUrl = game.steam_id 
-        ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg` 
-        : null;
-
-    const tasks = [
-        pywebview.api.get_game_details(game.id),
-        validateHeroImage(steamHeroUrl)
-    ];
-
-     if (game.steam_id) {
-        const logoUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
-        tasks.push(preloadImage(logoUrl));
-    }
-
-    const [details, validatedHeroUrl] = await Promise.all(tasks);
-
-    updateGameUI(game, details, validatedHeroUrl);
-
-    document.getElementById('game-loader').style.display = 'none';
-    const gameView = document.getElementById('game-view');
-    gameView.style.display = 'block';
-    gameView.style.animation = 'fadeIn 0.5s ease';
-}
-
-// Вспомогательная функция специально для валидации фона
-function validateHeroImage(url) {
-    return new Promise((resolve) => {
-        if (!url) return resolve(HERO_PLACEHOLDER); 
-
-        const img = new Image();
-        img.src = url;
+        const stats = await pywebview.api.get_dashboard_stats();
+        const stat_total_games = document.getElementById('stat-total-games');
+        const stat_total_size = document.getElementById('stat-total-size');
         
-        img.onload = () => resolve(url);
-        img.onerror = () => resolve(HERO_PLACEHOLDER); 
-    });
-}
+        
+        if (stat_total_games) stat_total_games.innerText = stats.total_games;
+        if (stat_total_size) stat_total_size.innerText = stats.total_backups_size;
+    },
 
-function updateGameUI(game, details, heroUrl) {
-    const hero = document.getElementById('hero-section');
-    const logo = document.getElementById('game-logo');
-    const titleFallback = document.getElementById('game-title-fallback');
-    const detailsText = document.getElementById('active-game-details');
-    const sourceBadge = document.getElementById('source-badge');
-
-    hero.style.backgroundImage = `
-        linear-gradient(to top, var(--base) 5%, transparent 90%),
-        linear-gradient(to right, var(--base) 0%, transparent 70%),
-        url('${heroUrl}')
-    `;
-    hero.style.opacity = '1';
-
-    if (game.steam_id) {
-        logo.src = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
-        logo.style.display = 'block';
-        titleFallback.innerText = '';
-        logo.onerror = () => {
-            logo.style.display = 'none';
-            titleFallback.innerText = game.name;
+    bindGlobalEvents() {
+        window.onclick = (e) => {
+            if (e.target instanceof HTMLElement && e.target.classList.contains('modal')) {
+                if (e.target.id === 'settings-modal') UI.modals.close('settings-modal');
+                if (e.target.id === 'history-modal') UI.modals.close('history-modal');
+            }
         };
-    } else {
-        logo.style.display = 'none';
-        titleFallback.innerText = game.name;
-    }
 
-    sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
-    detailsText.innerText = `ID: ${game.id}`;
-
-    if (details) {
-        document.getElementById('save-size').innerText = details.size;
-        currentBackups = details.backups;
-        renderHistory(details.backups);
-    }
-}
-
-function renderHistory(backups) {
-    const list = document.getElementById('history-list');
-    list.innerHTML = '';
-
-    if (!backups || backups.length === 0) {
-        list.innerHTML = '<p class="muted-text">Бэкапов еще не создано.</p>';
-        return;
-    }
-
-    backups.forEach(b => {
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.innerHTML = `
-            <div class="history-info">
-                <span class="history-name">${b.name}</span>
-                <span class="history-meta">${b.size} • ${new Date(b.date * 1000).toLocaleDateString()}</span>
-            </div>
-            <button class="simple-icon-btn" onclick="deleteBackup('${b.path.replace(/\\/g, '/')}')">
-                <span class="material-symbols-rounded">delete</span>
-            </button>
-        `;
-        list.appendChild(item);
-    });
-}
-
-function deleteBackup(filePath) {
-    if (confirm("Удалить этот бэкап навсегда?")) {
-        pywebview.api.delete_backup(filePath).then(success => {
-            if (success) {
-                // Просто обновляем детали игры, чтобы список перерисовался
-                pywebview.api.get_game_details(selectedGameId).then(details => {
-                    renderHistory(details.backups);
-                });
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (Elements.settingsModal?.style.display === 'flex') UI.modals.close('settings-modal');
+                if (Elements.historyModal?.style.display === 'flex') UI.modals.close('history-modal');
             }
         });
     }
-}
+};
 
-function openBackupFolder() {
-    if (activeGameName) {
-        pywebview.api.open_backup_folder(activeGameName);
-    }
-}
+const UI = {
+    setActiveNav(activeId) {
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        if (activeId) document.getElementById(activeId)?.classList.add('active');
+    },
 
-function requestBackup() {
-    if (!selectedGameId) return;
-    console.log("Попытка бэкапа для ID:", selectedGameId);
+    async selectGame(game, element) {
+        State.currentView = 'game';
+        const loadingId = game.id;
 
-    const progContainer = document.getElementById('progress-container');
-    const fill = document.getElementById('progress-bar-fill');
-    const backupBtn = document.getElementById('backup-btn');
+        Elements.dashboard && (Elements.dashboard.style.display = 'none');
 
-    
+        UI.setActiveNav(null); 
+        element?.classList.add('active');
 
-    // Подготовка UI
-    if (progContainer) {
-        progContainer.classList.remove('closing'); // Сбрасываем класс закрытия, если он был
-        progContainer.style.display = 'block';
-    }
-    if (fill) fill.style.width = '0%';
-    
-    if (backupBtn) {
-        backupBtn.disabled = true;
-        backupBtn.innerHTML = `<span class="material-symbols-rounded">sync</span> Сжатие...`;
-    }
+        State.selectedGameId = game.id;
+        State.activeGameName = game.name;
+        State.activeInstallPath = game.install_path;
 
-    pywebview.api.start_backup(selectedGameId);
-}
+        const details = await pywebview.api.get_game_details(game.id);
 
-// Эту функцию вызывает Python через evaluate_js
-function updateUIProgress(percent) {
-    const fill = document.getElementById('progress-bar-fill');
-    const percentText = document.getElementById('progress-percent'); // Добавь такой ID в HTML если нужно
+        if (State.currentView !== 'game' || State.selectedGameId !== loadingId) return;
 
-    if (fill) fill.style.width = percent + '%';
-    if (percentText) percentText.innerText = Math.round(percent) + '%';
-}
+        UI.updateGameUI(game, details, State.HERO_PLACEHOLDER);
 
-// Эту функцию вызывает Python по завершении
-function onBackupComplete(result) {
-    const backupBtn = document.getElementById('backup-btn');
-    const progContainer = document.getElementById('progress-container');
-    const fill = document.getElementById('progress-bar-fill');
+        if (Elements.gameView) {
+            Elements.gameView.style.display = 'block';
+            // Elements.gameView.style.animation = 'fadeIn 0.5s ease';
+        }
 
-    // 1. Доводим полоску до конца, если она не успела
-    if (fill) fill.style.width = '100%';
-
-    // 2. Небольшая пауза, чтобы пользователь увидел завершение (800мс - 1с)
-    setTimeout(() => {
-        // 3. Запускаем анимацию исчезновения
-        if (progContainer) {
-            progContainer.classList.add('closing');
+        if (game.steam_id) {
+            const steamHeroUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg`;
             
-            // 4. Когда анимация исчезновения закончится — полностью скрываем
-            progContainer.onanimationend = () => {
-                if (progContainer.classList.contains('closing')) {
-                    progContainer.style.display = 'none';
-                    progContainer.classList.remove('closing');
-                    
-                    // Возвращаем кнопку в обычное состояние
-                    if (backupBtn) {
-                        backupBtn.disabled = false;
-                        backupBtn.innerHTML = `<span class="material-symbols-rounded">inventory_2</span> BACKUP`;
-                    }
-                    
-                    // Обновляем список бэкапов в модалке (так как появился новый)
-                    pywebview.api.get_game_details(selectedGameId).then(details => {
-                        if (details) currentBackups = details.backups;
-                    });
-                    
-                    // Опционально: выводим уведомление об успехе
-                    console.log("Бэкап готов:", result);
+            Utils.validateHeroImage(steamHeroUrl).then(validUrl => {
+                if (State.selectedGameId === loadingId && State.currentView === 'game') {
+                    UI.applyHeroImage(validUrl);
+                }
+            });
+
+            const logoUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
+            Utils.preloadImage(logoUrl).then(() => {
+                if (State.selectedGameId === loadingId && State.currentView === 'game') {
+                    const logo = Elements.gameLogo;
+                    const titleFallback = Elements.gameTitle;
+
+                    // Проверяем, реально ли загрузилась картинка (не 404)
+                    const img = new Image();
+                    img.src = logoUrl;
+                    img.onload = () => {
+                        if (logo instanceof HTMLImageElement) {
+                            logo.src = logoUrl;
+                            logo.style.opacity = '1'; // Показываем лого
+                            logo.style.display = 'block';
+                            if (titleFallback) titleFallback.innerText = ''; // УДАЛЯЕМ ТЕКСТ
+                        }
+                    };
+                    img.onerror = () => {
+                        // Если картинки нет, оставляем текст и скрываем ломаное лого
+                        if (logo) logo.style.display = 'none';
+                        if (titleFallback) titleFallback.innerText = game.name;
+                    };
+                }
+            });
+        }
+    
+    },
+
+    applyHeroImage(url) {
+        const bg = Elements.heroBg;
+        if (!bg) return;
+
+        // transition
+        bg.style.opacity = '0';
+
+        setTimeout(() => {
+            const bgColor = 'var(--bg, var(--base))';
+            bg.style.backgroundImage = `
+                linear-gradient(to top, ${bgColor} 5%, transparent 90%), 
+                linear-gradient(to right, ${bgColor} 0%, transparent 70%), 
+                url("${url}")`;
+            bg.style.opacity = '1';
+        }, 250);
+    },
+
+    updateGameUI(game, details, heroUrl) {
+        const bg = Elements.heroBg;
+        const logo = Elements.gameLogo;
+        const titleFallback = Elements.gameTitle;
+        
+        if (bg) {
+            const bgColor = 'var(--bg, var(--base))';
+            bg.style.backgroundImage = `linear-gradient(to top, ${bgColor} 5%, transparent 90%), linear-gradient(to right, ${bgColor} 0%, transparent 70%), url("${heroUrl}")`;
+            bg.style.opacity = '1';
+        }
+
+        if (logo) {
+            logo.style.opacity = '0';
+        }
+
+        if (titleFallback) {
+            titleFallback.innerText = game.name;
+        }
+        
+
+
+        // other
+
+        if (Elements.detailsText) {
+            Elements.detailsText.innerText = `ID: ${game.id || 'N/A'}`;
+        }
+
+        const sourceBadge = Elements.gameSourceBadge;
+        if (sourceBadge) sourceBadge.innerText = game.source === 'steam' ? 'Steam' : 'Local';
+        
+        const saveSize = Elements.gameBackupSaveSize;
+        if (details && saveSize) {
+            saveSize.innerText = details.size;
+            State.currentBackups = details.backups;
+            UI.renderHistory(details.backups);
+        }
+    },
+
+    renderHistory(backups) {
+        const list = Elements.historyList
+        if (!list) return;
+        list.innerHTML = '';
+
+        if (!backups || backups.length === 0) {
+            list.innerHTML = '<p class="muted-text">Бэкапов еще не создано.</p>';
+            return;
+        }
+
+        backups.forEach(b => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <div class="history-info">
+                    <span class="history-name">${b.name}</span>
+                    <span class="history-meta">${b.size} • ${new Date(b.date * 1000).toLocaleDateString()}</span>
+                </div>
+                <button class="simple-icon-btn" onclick="Actions.deleteBackup('${b.path.replace(/\\/g, '/')}')">
+                    <span class="material-symbols-rounded">delete</span>
+                </button>`;
+            list.appendChild(item);
+        });
+    },
+
+    modals: {
+        open(id) {
+            const m = document.getElementById(id);
+            if (!m) return;
+            if (id === 'history-modal') UI.renderHistory(State.currentBackups);
+            m.style.display = 'flex';
+            setTimeout(() => m.classList.add('show'), 10);
+        },
+        close(id) {
+            const m = document.getElementById(id);
+            if (!m) return;
+            m.classList.add('closing');
+            m.onanimationend = () => {
+                if (m.classList.contains('closing')) {
+                    m.style.display = 'none';
+                    m.classList.remove('closing', 'show');
                 }
             };
         }
-    }, 1000); 
-}
-
-function openGameFolder() {
-    if (activeInstallPath) {
-        pywebview.api.open_folder(activeInstallPath);
-    } else {
-        alert("Путь к игре не определен");
     }
-}
+};
 
-function addPath() {
-    pywebview.api.select_folder().then(response => {
-        if (response.status === "success") {
-            // Перезагружаем список игр, так как добавилась новая папка
-            loadGames();
+const Actions = {
+    async play() {
+        if (!State.selectedGameId) return;
+        const success = await pywebview.api.play_game(State.selectedGameId);
+        if (!success) alert("Не удалось запустить игру.");
+    },
 
-            const modal = document.getElementById('settings-modal');
-            if (modal && modal.style.display === 'flex') {
-                openSettings();
-            }
+    async openGameFolder() {
+        if (!State.activeInstallPath) {
+            alert("Путь к игре не определен");
+            return;
         }
-    });
-}
+        
+        await pywebview.api.open_folder(State.activeInstallPath);
+        console.log("Команда на открытие папки игры отправлена");
+    },
 
-// Удаление пути из настроек
-function removePath(path) {
-    console.log(path);
-    if (confirm("Перестать сканировать эту папку?")) {
-        pywebview.api.remove_folder(path).then(success => {
+    async openBackupFolder() {
+        if (!State.activeGameName) return;
+
+        const success = await pywebview.api.open_backup_folder(State.activeGameName);
+        if (!success) {
+             console.warn("Папка бэкапов еще не создана или не найдена");
+        }
+    },
+
+    async backup() {
+        if (!State.selectedGameId) return;
+        
+        if (Elements.progressContainer) {
+            Elements.progressContainer.classList.remove('closing');
+            Elements.progressContainer.style.display = 'block';
+        }
+        if (Elements.progressBar) Elements.progressBar.style.width = '0%';
+        if (Elements.backupBtn) {
+            Elements.backupBtn.setAttribute('disabled', 'true');
+            Elements.backupBtn.innerHTML = `<span class="material-symbols-rounded">sync</span> Сжатие...`;
+        }
+        pywebview.api.start_backup(State.selectedGameId);
+    },
+
+    async deleteBackup(filePath) {
+        if (confirm("Удалить этот бэкап навсегда?")) {
+            const success = await pywebview.api.delete_backup(filePath);
             if (success) {
-                // После удаления обновляем и окно настроек, и основной список игр
-                openSettings(); 
-                loadGames();
+                const details = await pywebview.api.get_game_details(State.selectedGameId);
+                UI.renderHistory(details.backups);
             }
+        }
+    },
+
+    async addPath() {
+        const response = await pywebview.api.select_folder();
+        if (response.status === "success") {
+            App.loadLibrary();
+            if (Elements.settingsModal?.style.display === 'flex') Actions.openSettings();
+        }
+    },
+
+    async removePath(path) {
+        if (confirm("Перестать сканировать эту папку?")) {
+            const success = await pywebview.api.remove_folder(path);
+            if (success) { Actions.openSettings(); App.loadLibrary(); }
+        }
+    },
+
+    async openSettings() {
+        const settings = await pywebview.api.get_settings();
+        const pathList = document.getElementById('settings-path-list');
+        if (pathList) {
+            pathList.innerHTML = settings.non_steam_paths.length ? '' : '<p class="muted-text">Папки не добавлены</p>';
+            settings.non_steam_paths.forEach(path => {
+                const item = document.createElement('div');
+                item.className = 'path-item';
+                item.innerHTML = `<span>${path}</span>
+                    <button class="simple-icon-btn" onclick="Actions.removePath('${path.replace(/\\/g, '/')}')">
+                        <span class="material-symbols-rounded">delete</span>
+                    </button>`;
+                pathList.appendChild(item);
+            });
+        }
+        UI.modals.open('settings-modal');
+    },
+
+    openWiki() {
+        if (State.activeGameName) {
+            const url = `https://www.pcgamingwiki.com/wiki/${encodeURIComponent(State.activeGameName)}`;
+            window.open(url, '_blank');
+        } else {
+            console.warn("Невозможно открыть Wiki: имя игры не определено");
+        }
+    },
+};
+
+const Utils = {
+    /** @param {string | null} url @returns {Promise<void>} */
+    preloadImage(url) {
+        return new Promise((resolve) => {
+            if (!url) return resolve();
+            const img = new Image();
+            img.onload = img.onerror = () => resolve();
+            img.src = url;
+        });
+    },
+
+    validateHeroImage(url) {
+        return new Promise((resolve) => {
+            if (!url) return resolve(State.HERO_PLACEHOLDER); 
+            const img = new Image();
+            img.onload = () => resolve(url);
+            img.onerror = () => resolve(State.HERO_PLACEHOLDER);
+            img.src = url;
         });
     }
-}
+};
 
-function openWiki() {
-    if (activeGameName) {
-        // Просто открываем браузер по ссылке
-        const url = `https://www.pcgamingwiki.com/wiki/${encodeURIComponent(activeGameName)}`;
-        window.open(url, '_blank'); 
-        // Или через Python: pywebview.api.open_url(url)
-    }
-}
+const WindowControl = {
+    initResizing() {
+        const resizers = {
+            'r': document.getElementById('resizer-r'),
+            'b': document.getElementById('resizer-b'),
+            'rb': document.getElementById('resizer-rb')
+        };
 
-// Settings Modal
+        const handleMouseDown = (e, direction) => {
+            State.isResizing = true;
+            const startX = e.clientX, startY = e.clientY;
+            const startW = window.innerWidth, startH = window.innerHeight;
 
-// Открытие модального окна настроек
-function openSettings() {
-    const modal = document.getElementById('settings-modal');
-    
-    // Запрашиваем актуальные данные из Python
-    pywebview.api.get_settings().then(settings => {
-        renderSettings(settings);
-        modal.style.display = 'flex'; // Показываем окно
-    });
-}
+            const onMouseMove = (me) => {
+                if (!State.isResizing) return;
+                let newW = startW, newH = startH;
+                if (direction.includes('r')) newW = startW + (me.clientX - startX);
+                if (direction.includes('b')) newH = startH + (me.clientY - startY);
+                pywebview.api.resize_window(Math.max(newW, 800), Math.max(newH, 600));
+            };
 
-// Закрытие окна
-function closeSettings() {
-    const modal = document.getElementById('settings-modal');
-    modal.classList.add('closing');
-    modal.onanimationend = () => {
-        if (modal.classList.contains('closing')) {
-            modal.style.display = 'none';
-            modal.classList.remove('closing');
-        }
-    };
-}
+            const onMouseUp = () => {
+                State.isResizing = false;
+                document.removeEventListener('mousemove', onMouseMove);
+            };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp, { once: true });
+        };
 
-// Отрисовка списка путей в настройках
-function renderSettings(settings) {
-    const pathList = document.getElementById('settings-path-list');
-    pathList.innerHTML = ''; // Очищаем старый список
+        Object.entries(resizers).forEach(([dir, el]) => {
+            el?.addEventListener('mousedown', (e) => handleMouseDown(e, dir));
+        });
+    },
 
-    if (settings.non_steam_paths.length === 0) {
-        pathList.innerHTML = '<p class="muted-text" style="margin-bottom: 10px;">Папки не добавлены</p>';
-    }
+    initTitlebar() {
+        const titlebar = document.getElementById('titlebar');
+        titlebar?.addEventListener('dblclick', WindowControl.toggleMaximize);
+        titlebar?.addEventListener('mousedown', (e) => {
+            pywebview.api.get_maximize_status().then(isMaximized => {
+                if (isMaximized) {
+                    const onMove = (me) => {
+                        if (Math.abs(me.screenX - e.screenX) > 5 || Math.abs(me.screenY - e.screenY) > 5) {
+                            pywebview.api.simple_restore().then(() => {
+                                Elements.maxIcon && (Elements.maxIcon.innerText = 'crop_square');
+                            });
+                            document.removeEventListener('mousemove', onMove);
+                        }
+                    };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', () => document.removeEventListener('mousemove', onMove), { once: true });
+                }
+            });
+        });
+    },
 
-    settings.non_steam_paths.forEach(path => {
-        const item = document.createElement('div');
-        item.className = 'path-item';
-        item.innerHTML = `
-            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 350px;" title="${path}">
-                ${path}
-            </span>
-            <button class="simple-icon-btn" onclick="removePath('${path.replace(/\\/g, '/')}')">
-                <span class="material-symbols-rounded">delete</span>
-            </button>
-        `;
-        pathList.appendChild(item);
-    });
-}
-
-// Функция открытия модалки истории
-function openHistoryModal() {
-    const modal = document.getElementById('history-modal');
-    renderHistory(currentBackups); // Отрисовываем то, что уже загружено
-    modal.style.display = 'flex';
-    setTimeout(() => modal.classList.add('show'), 10);
-}
-
-function closeHistoryModal() {
-    const modal = document.getElementById('history-modal');
-    modal.classList.add('closing');
-    modal.onanimationend = () => {
-        if (modal.classList.contains('closing')) {
-            modal.style.display = 'none';
-            modal.classList.remove('closing');
-        }
-    };
-
-    modal.classList.remove('show');
-    setTimeout(() => modal.style.display = 'none', 400);
-}
-
-function requestPlay() {
-    if (selectedGameId) {
-        pywebview.api.play_game(selectedGameId).then(success => {
-            if (!success) alert("Не удалось запустить игру. Проверьте путь к исполняемому файлу.");
+    toggleMaximize() {
+        pywebview.api.toggle_maximize().then(isMaximized => {
+            if (Elements.maxIcon) Elements.maxIcon.innerText = isMaximized ? 'filter_none' : 'crop_square';
         });
     }
-}
+};
 
-// Функция переключения иконки и вызова максимизации
-function handleMaximize() {
-    pywebview.api.toggle_maximize().then(isMaximized => {
-        const icon = document.getElementById('max-icon');
-        // Меняем иконку: квадрат для обычного окна, "двойной квадрат" для развернутого
-        icon.innerText = isMaximized ? 'filter_none' : 'crop_square';
-    });
-}
+// @ts-ignore
+window.updateUIProgress = (percent) => {
+    if (Elements.progressBar) Elements.progressBar.style.width = percent + '%';
+    const percentText = document.getElementById('progress-percent');
+    if (percentText) percentText.innerText = Math.round(percent) + '%';
+};
 
-function initTitlebar() {
-    const dragRegion = document.getElementById('titlebar');
-    if (!dragRegion) return;
-
-    // Двойной клик для развертывания
-    dragRegion.addEventListener('dblclick', handleMaximize);
-
-    // Восстановление при перетаскивании
-    dragRegion.addEventListener('mousedown', (e) => {
-        pywebview.api.get_maximize_status().then(isMaximized => {
-            if (isMaximized) {
-                const onMouseMove = (moveEvent) => {
-                    if (Math.abs(moveEvent.screenX - e.screenX) > 5 || 
-                        Math.abs(moveEvent.screenY - e.screenY) > 5) {
-                        
-                        pywebview.api.simple_restore().then(wasRestored => {
-                            if (wasRestored) {
-                                const icon = document.getElementById('max-icon');
-                                if (icon) icon.innerText = 'crop_square';
-                            }
-                        });
-
-                        // Удаляем слушатель сразу
-                        document.removeEventListener('mousemove', onMouseMove);
+// @ts-ignore
+window.onBackupComplete = (result) => {
+    setTimeout(() => {
+        if (Elements.progressContainer) {
+            Elements.progressContainer.classList.add('closing');
+            Elements.progressContainer.onanimationend = () => {
+                if (Elements.progressContainer?.classList.contains('closing')) {
+                    Elements.progressContainer.style.display = 'none';
+                    Elements.progressContainer.classList.remove('closing');
+                    if (Elements.backupBtn) {
+                        Elements.backupBtn.removeAttribute('disabled');
+                        Elements.backupBtn.innerHTML = `<span class="material-symbols-rounded">inventory_2</span> BACKUP`;
                     }
-                };
 
-                const onMouseUp = () => {
-                    document.removeEventListener('mousemove', onMouseMove);
-                };
+                    pywebview.api.get_game_details(State.selectedGameId).then(details => {
+                        if (details) {
+                            State.currentBackups = details.backups;
+                            UI.renderHistory(State.currentBackups); 
 
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-            }
-        });
-    });
-}
+                            const saveSize = document.getElementById('save-size');
+                            if (saveSize) saveSize.innerText = details.size;
+                        }
+                    });
+                }
+            };
+        }
+    }, 1000);
+};
 
-// Закрытие модалки при клике вне контента
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        // Мы ищем, какая именно функция должна сработать. 
-        // Если ID совпадает с settings-modal — закрываем настройки, и т.д.
-        if (event.target.id === 'settings-modal') closeSettings();
-        if (event.target.id === 'history-modal') closeHistoryModal();
-    }
-}
-
-window.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        // Проверяем, какое окно открыто (через display === 'flex') и закрываем его
-        const settingsModal = document.getElementById('settings-modal');
-        const historyModal = document.getElementById('history-modal');
-
-        if (settingsModal.style.display === 'flex') closeSettings();
-        if (historyModal.style.display === 'flex') closeHistoryModal();
-    }
-});
-
+window.addEventListener('pywebviewready', App.init);

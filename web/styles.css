@@ -99,7 +99,6 @@ body {
     height: 100%;
     display: flex;
     align-items: center;
-    padding-left: 15px;
     font-size: 12px;
     color: var(--muted);
     user-select: none;
@@ -138,13 +137,38 @@ body {
     overflow: hidden;
 }
 
-#sidebar {
-    width: 240px;
-    background: var(--surface);
-    display: flex;
-    flex-direction: column;
+.sidebar {
+    /* Фиксируем базу, чтобы flex не мешал менять ширину */
+    flex: 0 0 260px; 
+    min-width: 200px;
+    max-width: 500px;
+    overflow: hidden;
+    position: relative;
+    background: var(--side);
     padding: 10px;
-    border-right: 1px solid var(--highlight-high);
+}
+
+#sidebar-resizer {
+    width: 6px;             /* Ширина зоны захвата */
+    cursor: e-resize;     /* Курсор изменения ширины */
+    background: transparent;
+    flex: 0 0 6px;          /* Фиксируем ширину самого резайзера */
+    margin-left: -3px;      /* Сдвигаем на центр границы */
+    margin-right: -3px;
+    z-index: 100;           /* Поверх всего */
+    transition: background 0.2s;
+}
+
+/* Подсветка при наведении, как в крутом софте */
+#sidebar-resizer:hover {
+    background: var(--iris); /* Твой цвет Rose Pine */
+    opacity: 0.5;
+}
+
+/* Класс-маска для body, чтобы при быстром движении мышь не "соскакивала" */
+body.resizing-active {
+    cursor: col-resize !important;
+    user-select: none; /* Запрещаем выделять текст во время растягивания */
 }
 
 /* Game List */
@@ -233,12 +257,16 @@ body {
     align-items: center;
     gap: 6px;
     margin: 0px 10px;
+    padding: 10px;
+    background: rgba(196, 167, 231, 0.1);
+    border-radius: 10px;
+    border: 1px solid var(--highlight-high);
 }
 
 .profile-img {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    border-radius: 8px;
     background: var(--overlay);
     border: 1px solid var(--highlight-high);
 }
@@ -356,15 +384,31 @@ body {
     position: relative;
     height: 400px;
     overflow: hidden;
+    background: var(--base);
+    /* background-size: cover;
+    background-position: center; */
+    /* mask-image: radial-gradient(white, black);
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    transition: opacity 0.4s ease-in-out, background-image 0.4s ease-in-out; */
+}
+
+#hero-bg {
+    position: absolute;
+    inset: 0;
     background-size: cover;
     background-position: center;
-    mask-image: radial-gradient(white, black); /* Хак для идеального сглаживания углов в Chrome/Edge */
+    
+    transition: opacity 0.6s ease-in-out, background-image 0.6s ease-in-out;
+    opacity: 1;
+    z-index: 0;
+    
+    mask-image: radial-gradient(white, black);
     -webkit-mask-image: -webkit-radial-gradient(white, black);
 }
 
 .hero-content {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     display: flex;
     align-items: flex-start;
     height: 100%;
@@ -377,6 +421,7 @@ body {
 #game-logo {
     max-width: 600px;
     max-height: 280px;
+    transition: opacity 0.3s ease;
 }
 
 #game-title-fallback {
@@ -714,9 +759,9 @@ body {
 
 .action-dock {
     display: flex;
-    gap: 10px;
+    gap: 4px;
     background: rgba(31, 29, 46, 0.6);
-    padding: 8px;
+    padding: 4px;
     border-radius: 16px;
     width: fit-content;
     align-items: center;
@@ -744,11 +789,9 @@ body {
     box-shadow: 0 0 20px rgba(156, 207, 216, 0.4);
 }
 
-/* Вторичные кнопки в доке */
 .btn-secondary {
-    width: 34px;
-    height: 34px;
     background: transparent;
+    gap: 6px;
     border: none;
     color: var(--text);
     border-radius: 12px;
@@ -757,6 +800,7 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: 0.2s;
+    padding: 10px;
 }
 
 .btn-secondary:hover {
