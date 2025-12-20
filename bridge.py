@@ -10,7 +10,7 @@ from core.backup_service import BackupService
 from core.file_utils import FileUtils
 
 class Bridge:
-    VERSION = "0.0.3"
+    VERSION = "0.0.7"
     
     def __init__(self):
         from core.config import ConfigService
@@ -70,7 +70,6 @@ class Bridge:
         backup_root = self._config.get("backup_root")
         games = self._scanner.scan_all()
         
-        # Считаем общий объем всех файлов в папке бэкапов
         total_size_bytes = 0
         path = Path(backup_root)
         if path.exists():
@@ -84,19 +83,15 @@ class Bridge:
     
     # Backup Logic
     def start_backup(self, game_id: str):
-        # 1. Находим данные игры
         games = self._scanner.scan_all()
         game = next((g for g in games if str(g['id']) == str(game_id)), None)
         
         if not game or not game['save_paths']:
             return {"status": "error", "message": "Paths not found"}
 
-        # 2. Функция, которая будет вызываться из Python и "стучаться" в JS
         def on_progress(percent):
-            # window.evaluate_js позволяет запустить любой JS код в окне
             self._window.evaluate_js(f"updateUIProgress({percent})")
 
-        # 3. Запускаем в отдельном потоке, чтобы не тормозить UI
         def worker():
             try:
                 result_path = BackupService.create_zip(
@@ -114,20 +109,16 @@ class Bridge:
         return {"status": "started"}
     
     def open_folder(self, path: str):
-        """Открывает папку в проводнике Windows."""
         if path and os.path.exists(path):
             os.startfile(path)
             return True
         return False
     
     def select_folder(self):
-        """Открывает диалог выбора папки и добавляет её в настройки."""
-        # Вызываем системный диалог выбора папки
         result = self._window.create_file_dialog(webview.FileDialog.FOLDER)
         
         if result:
             selected_path = os.path.normpath(result[0])
-            # Добавляем в настройки через ConfigService
             current_paths = self._config.get("non_steam_paths", [])
             
             if not any(os.path.normpath(p).lower() == selected_path.lower() for p in current_paths):
@@ -138,7 +129,6 @@ class Bridge:
         return {"status": "cancelled"}
     
     def get_game_details(self, game_id: str):
-        """Возвращает размер сохранений и список бэкапов."""
         games = self._scanner.scan_all()
         game = next((g for g in games if str(g['id']) == str(game_id)), None)
         
@@ -168,7 +158,7 @@ class Bridge:
         try:
             path = Path(file_path)
             if path.exists() and path.suffix == '.zip':
-                path.unlink() # Удаляет файл
+                path.unlink()
                 return True
         except Exception as e:
             print(f"Delete error: {e}")
@@ -202,16 +192,12 @@ class Bridge:
 
         try:
             if game['source'] == 'steam' and game['steam_id']:
-                # Запуск через Steam
                 os.startfile(f"steam://run/{game['steam_id']}")
             else:
-                # Запуск локальной игры: ищем самый большой .exe в папке
                 path = Path(game['install_path'])
                 exes = list(path.glob("*.exe")) + list(path.glob("*/*.exe"))
                 if exes:
-                    # Сортируем по размеру, обычно главный файл самый тяжелый
                     main_exe = max(exes, key=lambda p: p.stat().st_size)
-                    # Запускаем с учетом рабочей директории
                     subprocess.Popen(str(main_exe), cwd=str(main_exe.parent))
             return True
         except Exception as e:
