@@ -8,6 +8,7 @@ import subprocess
 
 from core.backup_service import BackupService
 from core.file_utils import FileUtils
+from core.updater import UpdaterService
 
 class Bridge:
     VERSION = "0.0.7"
@@ -24,9 +25,15 @@ class Bridge:
         self._scanner = GameScanner(self._steam, self._config, self._resolver)
         self._window = None
         self._is_maximized = False
-        
+    
     def get_app_version(self):
         return self.VERSION
+    
+    def check_updates(self):
+        return UpdaterService.check_for_updates(self.VERSION)
+    
+    def start_update(self, url):
+        UpdaterService.install_update(url)
     
     # Window Controls
     def simple_restore(self):

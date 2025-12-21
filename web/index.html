@@ -44,7 +44,7 @@
                     <button onclick="App.loadLibrary()" class="simple-icon-btn" title="Обновить">
                         <span class="material-symbols-rounded">refresh</span>
                     </button>
-                    <button class="simple-icon-btn">
+                    <button onclick="UI.modals.open('settings-modal')" class="simple-icon-btn">
                         <span class="material-symbols-rounded">settings</span>
                     </button>
                 </div>
@@ -172,7 +172,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Настройки</h2>
-                <button onclick="UI.modals.close('close-modal')" class="close-modal">×</button>
+                <button onclick="UI.modals.close('settings-modal')" class="close-modal">×</button>
             </div>
             <div class="modal-body">
                 <label>Папки для сканирования (Non-Steam):</label>

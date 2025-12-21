@@ -8,19 +8,15 @@ from core.file_utils import FileUtils
 class BackupService:
     @staticmethod
     def create_zip(game_name: str, source_paths: List[str], destination_root: str, progress_callback: Callable[[float], None]) -> str:
-        # 1. Генерируем безопасное имя один раз
         safe_name = FileUtils.sanitize_name(game_name)
         
-        # 2. Путь к папке
         dest_dir = Path(destination_root) / safe_name
         dest_dir.mkdir(parents=True, exist_ok=True)
 
-        # 3. Путь к ZIP-файлу (обязательно используем safe_name здесь тоже!)
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         zip_name = f"{safe_name}_{timestamp}.zip" # ИСПОЛЬЗУЕМ safe_name
         zip_path = dest_dir / zip_name
 
-        # Собираем все файлы для подсчета прогресса
         files_to_add = []
         for path_str in source_paths:
             p = Path(path_str)
@@ -30,7 +26,6 @@ class BackupService:
                 else:
                     for file in p.rglob('*'):
                         if file.is_file():
-                            # Сохраняем относительный путь внутри папки сохранения
                             files_to_add.append((file, file.relative_to(p.parent)))
 
         if not files_to_add:
@@ -41,7 +36,6 @@ class BackupService:
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
             for i, (file_path, arc_name) in enumerate(files_to_add):
                 zipf.write(file_path, arcname=arc_name)
-                # Отправляем прогресс обратно (0.0 - 100.0)
                 progress = ((i + 1) / total_files) * 100
                 progress_callback(progress)
 

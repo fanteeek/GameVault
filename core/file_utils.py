@@ -1,10 +1,11 @@
 import re
+import sys
+import os
 from pathlib import Path
 
 class FileUtils:
     @staticmethod
     def sanitize_name(name: str) -> str:
-        """Удаляет символы, запрещенные в именах файлов Windows."""
         return re.sub(r'[\\/*?:"<>|]', "", name)
     
     @staticmethod
@@ -36,8 +37,6 @@ class FileUtils:
 
     @staticmethod
     def get_backups_list(backup_root: str, game_name: str) -> list[dict]:
-        """Возвращает список существующих zip-архивов для конкретной игры."""
-        # Санитизируем имя игры перед поиском папки
         safe_name = FileUtils.sanitize_name(game_name)
         backup_path = Path(backup_root) / safe_name
         
@@ -51,7 +50,18 @@ class FileUtils:
                 "name": file.name,
                 "path": str(file),
                 "size": FileUtils.format_size(stats.st_size),
-                "date": Path(file).stat().st_mtime # Передадим timestamp
+                "date": Path(file).stat().st_mtime
             })
-        # Сортируем: сначала новые
         return sorted(backups, key=lambda x: x['date'], reverse=True)
+    
+    @staticmethod
+    def get_resource_path(relative_path):
+        if hasattr(sys, '_MEIPASS'):
+            return Path(sys._MEIPASS) / relative_path
+        return Path(os.path.abspath(".")) / relative_path
+
+    @staticmethod
+    def get_app_dir():
+        if hasattr(sys, 'frozen'):
+            return Path(sys.executable).parent
+        return Path(os.path.abspath("."))

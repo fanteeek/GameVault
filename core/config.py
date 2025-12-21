@@ -2,13 +2,14 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
+from core.file_utils import FileUtils
+
 class ConfigService:
     def __init__(self, filename: str = "settings.json"):
-        self.path = Path(filename)
+        self.path = FileUtils.get_app_dir() / filename
         self.data: Dict[str, Any] = self._load()
-        # Установка пути по умолчанию, если его нет
         if "backup_root" not in self.data:
-            default_path = Path.cwd() / "backups"
+            default_path = FileUtils.get_app_dir() / "backups"
             self.data["backup_root"] = str(default_path)
             self.save()
 

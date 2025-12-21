@@ -43,12 +43,37 @@ const App = {
         const version = await pywebview.api.get_app_version();
         const versionEl = Elements.version;
         if (versionEl) versionEl.innerText = version;
-
+        App.checkForUpdates();
         App.loadLibrary();
         WindowControl.initSidebarResizer();
         WindowControl.initResizing();
         WindowControl.initTitlebar();
         App.bindGlobalEvents();
+    },
+
+    async checkForUpdates() {
+        const update = await pywebview.api.check_updates();
+        
+        if (update.update_available) {
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.querySelector('.status-dot');
+            
+            if (statusText) statusText.innerHTML = `Доступна версия v${update.latest_version}! <a href="#" onclick="App.runUpdate('${update.download_url}')" style="color: var(--iris); margin-left: 10px;">Обновить</a>`;
+            
+            if (statusDot instanceof HTMLElement) {
+                statusDot.style.background = 'var(--iris)';
+                statusDot.style.boxShadow = '0 0 10px var(--iris)';
+            }
+        }
+    },
+
+    async runUpdate(url) {
+        if (confirm("Программа будет перезапущена для установки обновления. Продолжить?")) {
+            const statusText = document.getElementById('status-text');
+            if (statusText) statusText.innerText = "Загрузка обновления...";
+            
+            await pywebview.api.start_update(url);
+        }
     },
 
     async loadLibrary() {

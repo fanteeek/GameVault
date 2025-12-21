@@ -6,13 +6,14 @@ import json
 from core.config import ConfigService
 from core.resolver import PathResolver
 from core.steam import SteamService
+from core.file_utils import FileUtils
 
 class GameScanner:
     def __init__(self, steam: SteamService, config: ConfigService, resolver: PathResolver):
         self.steam = steam
         self.config = config
         self.resolver = resolver
-        self.db_path = "database.db"
+        self.db_path = FileUtils.get_resource_path("database.db")
 
     def _query_db(self, field: str, value: str) -> Optional[dict]:
         try:
@@ -29,7 +30,6 @@ class GameScanner:
     def scan_all(self) -> List[Dict]:
         games = []
         
-        # 1. Сканируем Steam
         for lib in self.steam.get_library_paths():
             common_dir = lib / "steamapps" / "common"
             if not common_dir.exists(): continue
@@ -41,7 +41,6 @@ class GameScanner:
                         if self._is_really_installed(folder, game_data["steam_id"]):
                             games.append(self._format_game(game_data, folder, 'steam'))
 
-        # 2. Сканируем локальные папки из настроек
         for path_str in self.config.get("non_steam_paths", []):
             local_path = Path(path_str)
             if not local_path.exists(): continue
@@ -56,7 +55,6 @@ class GameScanner:
         return games
 
     def _format_game(self, db_data: dict, folder: Path, source: str) -> dict:
-        # Извлекаем пути сохранений из JSON в БД
         save_data = json.loads(db_data["save_location"])
         win_templates = save_data.get("win", [])
         resolved_saves = [self.resolver.resolve(t, folder) for t in win_templates]
@@ -71,19 +69,13 @@ class GameScanner:
         }
     
     def _is_really_installed(self, folder: Path, steam_id: str = None) -> bool:
-        """Проверяет, действительно ли игра установлена."""
-        # 1. Для Steam проверяем файл манифеста
         if steam_id:
-            # Манифесты лежат в library/steamapps/appmanifest_ID.acf
-            # Наш folder это library/steamapps/common/GameName
             manifest_path = folder.parent.parent / f"appmanifest_{steam_id}.acf"
             if manifest_path.exists():
                 return True
             return False
 
-        # 2. Для Non-Steam проверяем наличие .exe файлов
         try:
-            # Ищем хотя бы один .exe в папке игры (не слишком глубоко для скорости)
             exes = list(folder.glob("*.exe")) + list(folder.glob("*/*.exe"))
             if exes:
                 return True

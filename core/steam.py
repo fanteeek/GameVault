@@ -25,11 +25,9 @@ class SteamService:
 
         with open(vdf_path, "r", encoding="utf-8") as f:
             data = vdf.load(f)
-            # В структуре libraryfolders пути лежат в вложенных объектах
             return [Path(val["path"]) for val in data.get("libraryfolders", {}).values() if "path" in val]
 
     def get_active_user_context(self) -> Dict[str, str]:
-        """Возвращает UID и hex-имя текущего пользователя Steam."""
         context = {"uid": "", "uid_short": "", "account_name": ""}
         if not self.install_path: return context
 

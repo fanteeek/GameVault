@@ -2,12 +2,12 @@ import webview
 import os
 from bridge import Bridge
 
+from core.file_utils import FileUtils
+
 def main():
-    # Создаем экземпляр API (моста)
     api = Bridge()
     
-    # Путь к HTML файлу
-    html_path = os.path.join(os.path.dirname(__file__), 'web', 'index.html')
+    html_path = str(FileUtils.get_resource_path("web/index.html"))
     
     # Создаем окно
     window = webview.create_window(
