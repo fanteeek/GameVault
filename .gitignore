@@ -7,11 +7,15 @@ __pycache__/
 .Python
 build/
 dist/
+installer_build/
 MANIFEST
 
 # PyInstaller
 *.manifest
 *.spec
+
+# Inno
+*.iss
 
 # Environments
 .env
