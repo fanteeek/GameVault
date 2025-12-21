@@ -579,19 +579,34 @@ body.resizing-active {
     justify-content: center;
     align-items: center;
     height: 100%;
-    text-align: center;
+    text-align: left;
     animation: fadeIn 0.5s ease;
 }
 
 .iris-text { color: var(--iris); font-size: 48px; margin-bottom: 10px; }
 .muted-text { color: var(--subtle); max-width: 400px; line-height: 1.6; }
 
+.welcome-header {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 20px;
+}
+
+.section-title {
+    margin: 0px 20px;
+}
+
 .stats-grid {
     display: flex;
     gap: 20px;
-    margin-top: 20px;
+    margin-top: 12px;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+}
+
+.activity-section {
+    display: flex;
+    flex-direction: column;
 }
 
 .card-info {
@@ -599,25 +614,17 @@ body.resizing-active {
     flex-direction: column;
 }
 
-.glass-card span {
-    color: var(--foam);
-}
-
 .glass-card {
     background: var(--surface);
     border: 1px solid var(--highlight-high);
-    padding: 14px 32px;
+    padding: 4px 8px;
     border-radius: 12px;
     display: flex;
-    flex-direction: column;
     gap: 4px;
+    margin: 20px;
     align-items: center;
     transition: transform 0.3s ease;
-    min-width: 180px;
 }
-
-.glass-card:hover { transform: translateY(-5px); }
-.glass-card span { font-size: 32px; }
 
 .stats-container {
     display: flex;
@@ -625,18 +632,89 @@ body.resizing-active {
     margin-top: 40px;
 }
 
+/* --- Stats Cards --- */
 .stat-card {
-    background: var(--surface);
-    padding: 14px 32px;
-    border-radius: 12px;
-    border: 1px solid var(--highlight-high);
-    min-width: 180px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 20px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    backdrop-filter: blur(10px);
 }
 
-.stat-card span { display: block; font-size: 32px; font-weight: bold; color: var(--foam); }
-.stat-card label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
+.stat-icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.iris-bg { background: rgba(196, 167, 231, 0.1); color: var(--iris); }
+.foam-bg { background: rgba(156, 207, 216, 0.1); color: var(--foam); }
 
+.stat-content span { font-size: 24px; font-weight: 800; display: block; }
+.stat-content label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
 
+/* --- Infinite Carousel --- */
+.shelf-container { margin-top: 12px; }
+.infinite-carousel {
+    width: 100%;
+    overflow: hidden;
+    padding: 20px 0;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.carousel-track {
+    display: flex;
+    gap: 15px;
+    width: max-content;
+    animation: scroll 40s linear infinite;
+}
+
+.carousel-track:hover {
+    animation-play-state: paused; /* Замирает при наведении! */
+}
+
+.carousel-item {
+    width: 184px;
+    height: 69px;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.3s ease, border-color 0.3s;
+    cursor: pointer;
+}
+
+.carousel-item:hover {
+    transform: scale(1.1);
+    transform: translateY(-2px);
+    border: 1px solid var(--highlight-high);
+}
+
+/* --- Activity Grid --- */
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin: 20px;
+}
+
+.activity-card {
+    background: var(--overlay);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.activity-info h4 { font-size: 14px; margin-bottom: 4px; }
+.activity-info p { font-size: 11px; color: var(--muted); }
+.activity-size { font-weight: 700; color: var(--foam); font-size: 13px; }
 
 .loading {
     opacity: 0;
@@ -799,7 +877,7 @@ body.resizing-active {
 #resizer-rb { bottom: 0; right: 0; cursor: se-resize; }
 #resizer-lb { bottom: 0; left: 0; cursor: sw-resize; }
 
-/* ANINMATIONS */
+/* ANIMATIONS */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -808,6 +886,29 @@ body.resizing-active {
 @keyframes fadeOut {
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(10px); }
+}
+
+/* --- Dashboard Animations --- */
+@keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); } 
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 10px rgba(235, 111, 146, 0.4); }
+    50% { box-shadow: 0 0 20px rgba(235, 111, 146, 0.7); }
+    100% { box-shadow: 0 0 10px rgba(235, 111, 146, 0.4); }
+}
+
+.reveal {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease forwards;
+    animation-delay: var(--delay);
 }
 
 .action-dock {
@@ -834,12 +935,23 @@ body.resizing-active {
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.3s ease;
 }
 
-.btn-play:hover {
+.btn-play:not(.running):hover {
     background: var(--foam);
     box-shadow: 0 0 20px rgba(156, 207, 216, 0.4);
+}
+
+.btn-play.running {
+    background: var(--rose) !important;
+    box-shadow: 0 0 15px rgba(235, 111, 146, 0.3);
+    animation: pulse-red 2s infinite;
+}
+
+.btn-play.running:hover {
+    background: var(--rose) !important;
+    box-shadow: 0 0 25px rgba(235, 111, 146, 0.5);
 }
 
 .btn-secondary {

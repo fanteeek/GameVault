@@ -9,6 +9,7 @@ import subprocess
 
 from core.backup_service import BackupService
 from core.file_utils import FileUtils
+from core.launcher import LauncherService
 from core.updater import UpdaterService
 
 class Bridge:
@@ -26,6 +27,8 @@ class Bridge:
         self._scanner = GameScanner(self._steam, self._config, self._resolver)
         self._window = None
         self._is_maximized = False
+        
+        self._launcher = None
         
         self._icon_cache = self._config.get("icon_cache", {})
     
@@ -69,7 +72,8 @@ class Bridge:
     
     def set_window(self, window):
         self._window = window
-
+        self._launcher = LauncherService(window)
+        
     def get_maximize_status(self):
         return self._is_maximized
     
@@ -87,19 +91,46 @@ class Bridge:
         if self._window:
             self._window.resize(width, height)
     
-    def get_dashboard_stats(self):
+    def get_dashboard_data(self):
         backup_root = self._config.get("backup_root")
         games = self._scanner.scan_all()
         
         total_size_bytes = 0
+        all_backups = []
+        
         path = Path(backup_root)
         if path.exists():
             for file in path.rglob('*.zip'):
-                total_size_bytes += file.stat().st_size
+                stats = file.stat()
+                total_size_bytes += stats.st_size
+                all_backups.append({
+                    "name": file.name,
+                    "game": file.parent.name,
+                    "size": FileUtils.format_size(stats.st_size),
+                    "date": stats.st_mtime
+                })
 
+        recent_activity = sorted(all_backups, key=lambda x: x['date'], reverse=True)[:5]
+
+        carousel_games = []
+        for g in games:
+            carousel_games.append({
+                "id": g['id'],
+                "steam_id": g.get('steam_id'),
+                "name": g['name']
+            })
+
+        try:
+            user_name = os.getlogin()
+        except:
+            user_name = os.environ.get('USERNAME', 'Пользователь')
+        
         return {
+            "user_name": user_name,
             "total_games": len(games),
-            "total_backups_size": FileUtils.format_size(total_size_bytes)
+            "total_size": FileUtils.format_size(total_size_bytes),
+            "recent_activity": recent_activity,
+            "carousel_games": carousel_games * 2
         }
     
     # Backup Logic
@@ -162,7 +193,6 @@ class Bridge:
         return self._cached_games
     
     def _load_missing_icons_async(self):
-        # Берем копию текущих игр
         games_to_scan = list(self._cached_games)
         updated_any = False
 
@@ -259,24 +289,14 @@ class Bridge:
         }
 
     def play_game(self, game_id: str):
-        games = self._scanner.scan_all()
-        game = next((g for g in games if str(g['id']) == str(game_id)), None)
-        
-        if not game: return False
-
-        try:
-            if game['source'] == 'steam' and game['steam_id']:
-                os.startfile(f"steam://run/{game['steam_id']}")
-            else:
-                path = Path(game['install_path'])
-                exes = list(path.glob("*.exe")) + list(path.glob("*/*.exe"))
-                if exes:
-                    main_exe = max(exes, key=lambda p: p.stat().st_size)
-                    subprocess.Popen(str(main_exe), cwd=str(main_exe.parent))
-            return True
-        except Exception as e:
-            print(f"Launch error: {e}")
-            return False
+        game = next((g for g in self._cached_games if str(g['id']) == str(game_id)), None)
+        if game:
+            return self._launcher.launch(game)
+        return False
+    
+    def stop_game(self):
+        if self._launcher:
+            self._launcher.stop_current_game()
 
   
     

@@ -9,7 +9,8 @@ const State = {
     isResizing: false,
     currentBackups: [],
     currentView: 'dashboard',
-    HERO_PLACEHOLDER: 'assets/hero_placeholder.jpg'
+    HERO_PLACEHOLDER: 'assets/hero_placeholder.jpg',
+    isGameRunning: false
 };
 
 const Elements = {
@@ -158,18 +159,45 @@ const App = {
 
     async showDashboard() {
         State.currentView = 'dashboard';
-        Elements.dashboard && (Elements.dashboard.style.display = 'flex');
-        Elements.gameView && (Elements.gameView.style.display = 'none');
-        Elements.loader && (Elements.loader.style.display = 'none');
+        if (Elements.dashboard) Elements.dashboard.style.display = 'block';
+        if (Elements.gameView) Elements.gameView.style.display = 'none';
         UI.setActiveNav('nav-home');
 
-        const stats = await pywebview.api.get_dashboard_stats();
-        const stat_total_games = document.getElementById('stat-total-games');
-        const stat_total_size = document.getElementById('stat-total-size');
-        
-        
-        if (stat_total_games) stat_total_games.innerText = stats.total_games;
-        if (stat_total_size) stat_total_size.innerText = stats.total_backups_size;
+        const data = await pywebview.api.get_dashboard_data();
+
+        const nameEl = document.getElementById('dash-user-name');
+        const totalGames = document.getElementById('dash-total-games');
+        const totalSize = document.getElementById('dash-total-size');
+        if (nameEl) nameEl.innerText = data.user_name;
+        if (totalGames) totalGames.innerText = data.total_games;
+        if (totalSize) totalSize.innerText = data.total_size;
+
+        const track = document.getElementById('carousel-track');
+        if (track) {
+            track.innerHTML = data.carousel_games.map(game => {
+                const img = game.steam_id 
+                    ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/capsule_184x69.jpg`
+                    : State.HERO_PLACEHOLDER;
+                return `<div class="carousel-item" style="background-image: url('${img}')" title="${game.name}"></div>`;
+            }).join('');
+        }
+
+        const activityList = document.getElementById('activity-list');
+        if (activityList) {
+            activityList.innerHTML = data.recent_activity.map(act => `
+                <div class="activity-card">
+                    <div class="activity-info">
+                        <h4>${act.game}</h4>
+                        <p>${new Date(act.date * 1000).toLocaleString()}</p>
+                    </div>
+                    <div class="activity-size">${act.size}</div>
+                </div>
+            `).join('');
+            
+            if (data.recent_activity.length === 0) {
+                activityList.innerHTML = '<p class="subtle-text">История действий пока пуста</p>';
+            }
+        }
     },
 
     bindGlobalEvents() {
@@ -214,7 +242,6 @@ const UI = {
         const sections = document.querySelectorAll('.list-section-title');
 
         gameItems.forEach(item => {
-            // Проверяем, что это именно HTMLElement
             if (item instanceof HTMLElement) {
                 const title = item.querySelector('.game-title')?.textContent?.toLowerCase() || "";
                 if (title.includes(searchTerm)) {
@@ -390,6 +417,20 @@ const UI = {
         });
     },
 
+    togglePlayButton(isRunning) {
+        State.isGameRunning = isRunning;
+        const playBtn = document.getElementById('play-btn');
+        if (!playBtn) return;
+
+        if (isRunning) {
+            playBtn.innerHTML = `<span class="material-symbols-rounded">stop_circle</span> ЗАКРЫТЬ`;
+            playBtn.classList.add('running');
+        } else {
+            playBtn.innerHTML = `<span class="material-symbols-rounded">play_arrow</span> ИГРАТЬ`;
+            playBtn.classList.remove('running');
+        }
+    },
+
     modals: {
         async open(id) {
             const m = document.getElementById(id);
@@ -415,9 +456,15 @@ const UI = {
 
 const Actions = {
     async play() {
-        if (!State.selectedGameId) return;
-        const success = await pywebview.api.play_game(State.selectedGameId);
-        if (!success) alert("Не удалось запустить игру.");
+        if (State.isGameRunning) {
+            // Если игра запущена - кнопка работает как "Закрыть"
+            await pywebview.api.stop_game();
+        } else {
+            // Если не запущена - обычный запуск
+            if (!State.selectedGameId) return;
+            const success = await pywebview.api.play_game(State.selectedGameId);
+            if (!success) alert("Не удалось запустить игру.");
+        }
     },
 
     async openGameFolder() {

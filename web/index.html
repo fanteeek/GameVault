@@ -63,28 +63,55 @@
         <!-- Main Content -->
         <main id="main-content">
             <div id="dashboard-view" class="view">
-                <div class="welcome-section">
-                    <h1 class="iris-text">GameVault</h1>
-                    <p class="subtle-text">Ваша библиотека сохранений под контролем</p>
+                <!-- Приветствие -->
+                <div class="welcome-header">
+                    <h1>Добрый вечер, <span id="dash-user-name" class="highlight-text">Геймер</span></h1>
+                    <p class="subtle-text">Тут могла быть ваша шутка</p>
                 </div>
-                
+
+                <!-- Сетка статистики -->
                 <div class="stats-grid">
                     <div class="glass-card">
-                        <span class="material-symbols-rounded icon-iris">Library_books</span>
-                        <div class="card-info">
-                            <label>Всего игр</label>
-                            <span id="stat-total-games">0</span>
+                        <div class="stat-card reveal" style="--delay: 0.1s">
+                            <div class="stat-icon-box iris-bg">
+                                <span class="material-symbols-rounded">library_books</span>
+                            </div>
+                            <div class="stat-content">
+                                <span id="dash-total-games">0</span>
+                                <label>Игр в базе</label>
+                            </div>
+                        </div>
+                        <div class="stat-card reveal" style="--delay: 0.2s">
+                            <div class="stat-icon-box foam-bg">
+                                <span class="material-symbols-rounded">cloud_done</span>
+                            </div>
+                            <div class="stat-content">
+                                <span id="dash-total-size">0 KB</span>
+                                <label>Общий объем</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="glass-card">
-                        <span class="material-symbols-rounded icon-foam">Cloud_done</span>
-                        <div class="card-info">
-                            <label>Общий объем бэкапов</label>
-                            <span id="stat-total-size">0 KB</span>
+                </div>
+
+                <!-- Бесконечная карусель -->
+                <div class="shelf-container reveal" style="--delay: 0.3s">
+                    <h3 class="section-title">Ваша библиотека</h3>
+                    <div class="infinite-carousel">
+                        <div id="carousel-track" class="carousel-track">
+                            <!-- Сюда JS добавит обложки -->
                         </div>
+                    </div>
+                </div>
+
+                <!-- Последняя активность -->
+                <div class="activity-section reveal" style="--delay: 0.4s">
+                    <h3 class="section-title">Последние бэкапы</h3>
+                    <div id="activity-list" class="activity-grid">
+                        <!-- Сюда JS добавит записи -->
                     </div>
                 </div>
             </div>
+
             
             <!-- Indicator Loading -->
             <div id="game-loader" style="display: none;">
