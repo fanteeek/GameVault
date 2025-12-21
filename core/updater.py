@@ -5,7 +5,7 @@ import subprocess
 from core.file_utils import FileUtils
 
 class UpdaterService:
-    GITHUB_API_URL = "https://api.github.com/repos/fanteeek/GameVault/releases/latest"
+    GITHUB_API_URL = "https://api.github.com/repos/fanteeek/GameVault/releases"
 
     @staticmethod
     def version_to_tuple(v):
@@ -24,19 +24,31 @@ class UpdaterService:
         try:
             response = requests.get(UpdaterService.GITHUB_API_URL, timeout=5)
             if response.status_code == 200:
-                data = response.json()
-                latest_version = data['tag_name']
+                releases = response.json()
+                if not releases:
+                    return {"update_available": False}
+                
+                latest_release = releases[0]
+                latest_version = latest_release['tag_name']
+                
                 
                 v_latest = UpdaterService.version_to_tuple(latest_version)
                 v_current = UpdaterService.version_to_tuple(current_version)
                 
                 if v_latest > v_current:
-                    return {
-                        "update_available": True,
-                        "latest_version": latest_version,
-                        "download_url": data['assets'][0]['browser_download_url'],
-                        "changelog": data['body']
-                    }
+                    download_url = None
+                    for asset in latest_release.get('assets', []):
+                        if asset['name'].endswith('.exe'):
+                            download_url = asset['browser_download_url']
+                            break
+                        
+                    if download_url:
+                        return {
+                            "update_available": True,
+                            "latest_version": latest_version,
+                            "download_url": download_url,
+                            "changelog": latest_release.get('body', '')
+                        }
         except Exception as e:
             print(f"Ошибка проверки обновлений: {e}")
         return {"update_available": False}
