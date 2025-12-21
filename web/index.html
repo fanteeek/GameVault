@@ -49,6 +49,10 @@
                     </button>
                 </div>
             </div>
+            <div class="search-container">
+                <span class="material-symbols-rounded search-icon">search</span>
+                <input type="text" id="game-search" placeholder="Поиск в библиотеке..." oninput="UI.filterGames(this.value)">
+            </div>
             <div id="game-list">
                 <!-- Dynamic JS -->
             </div>

@@ -207,6 +207,37 @@ body.resizing-active {
 
 /* Game List */
 
+.search-container {
+    margin: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+#game-search {
+    width: 100%;
+    background: var(--overlay);
+    border: 1px solid var(--highlight-high);
+    border-radius: 8px;
+    padding: 8px 12px 8px 35px; /* Отступ слева для иконки */
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#game-search:focus {
+    border-color: var(--iris);
+}
+
+.search-icon {
+    position: absolute;
+    left: 10px;
+    font-size: 18px;
+    color: var(--muted);
+    pointer-events: none;
+}
+
 #game-list {
     flex-grow: 1;
     overflow-y: auto;
@@ -380,7 +411,6 @@ body.resizing-active {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--highlight-high);
 }
 
 #game-badges {

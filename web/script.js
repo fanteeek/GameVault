@@ -208,6 +208,30 @@ const UI = {
         }
     },
 
+    filterGames(query) {
+        const searchTerm = query.toLowerCase();
+        const gameItems = document.querySelectorAll('.game-item');
+        const sections = document.querySelectorAll('.list-section-title');
+
+        gameItems.forEach(item => {
+            // Проверяем, что это именно HTMLElement
+            if (item instanceof HTMLElement) {
+                const title = item.querySelector('.game-title')?.textContent?.toLowerCase() || "";
+                if (title.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        });
+
+        sections.forEach(section => {
+            if (section instanceof HTMLElement) {
+                section.style.display = searchTerm.length > 0 ? 'none' : 'block';
+            }
+        });
+    },
+
     async selectGame(game, element) {
         State.currentView = 'game';
         const loadingId = game.id;
