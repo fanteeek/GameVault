@@ -6,7 +6,7 @@ import subprocess
 from core.file_utils import FileUtils
 
 class UpdaterService:
-    GITHUB_API_URL = "https://api.github.com/repos/fanteek/GameVault/releases/latest"
+    GITHUB_API_URL = "https://api.github.com/repos/fanteeek/GameVault/releases/latest"
 
     @staticmethod
     def check_for_updates(current_version):
@@ -31,30 +31,25 @@ class UpdaterService:
     def install_update(download_url):
         try:
             app_dir = FileUtils.get_app_dir()
-            current_exe = sys.executable
-            new_exe = app_dir / "GameVault_new.exe"
+            setup_path = app_dir / "GameVault_Update_Setup.exe"
             
+            # 1. Скачивание
             response = requests.get(download_url, stream=True)
-            with open(new_exe, 'wb') as f:
+            with open(setup_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-
-            bat_path = app_dir / "update_helper.bat"
-            bat_content = f"""
-            @echo off
-            timeout /t 2 /nobreak > nul
-            del "{current_exe}"
-            ren "{new_exe.name}" "{os.path.basename(current_exe)}"
-            start "" "{os.path.basename(current_exe)}"
-            del "%~f0"
-            """
             
-            with open(bat_path, "w", encoding="cp1251") as f:
-                f.write(bat_content)
+            print("Запуск обновления...")
+            subprocess.Popen([
+                str(setup_path), 
+                '/VERYSILENT', 
+                '/SUPPRESSMSGBOXES', 
+                '/NORESTART', 
+                '/CLOSEAPPLICATIONS'
+            ], shell=True)
 
-            subprocess.Popen([str(bat_path)], shell=True)
             sys.exit(0)
             
         except Exception as e:
-            print(f"Ошибка при установке: {e}")
+            print(f"Ошибка обновления: {e}")
             return False
