@@ -142,9 +142,9 @@ class Bridge:
             if not any(os.path.normpath(p).lower() == selected_path.lower() for p in current_paths):
                 current_paths.append(selected_path)
                 self._config.set("non_steam_paths", current_paths)
-                return {"status": "success", "path": selected_path}
+                return True
         
-        return {"status": "cancelled"}
+        return False
     
     def get_game_details(self, game_id: str):
         games = self._scanner.scan_all()

@@ -26,6 +26,7 @@ const Elements = {
     get backupBtn() { return document.getElementById('backup-btn'); },
     get listContainer() { return document.getElementById('game-list'); },
     get settingsModal() { return document.getElementById('settings-modal'); },
+    get settingsPathList() { return document.getElementById('settings-path-list'); },
     get historyModal() { return document.getElementById('history-modal'); },
     get historyList() { return document.getElementById('history-list');},
     get progressContainer() { return document.getElementById('progress-container'); },
@@ -66,7 +67,7 @@ const App = {
             // @ts-ignore
             if (dot) dot.style.background = 'var(--iris)';
         } else {
-            if (statusText) statusText.innerText = "GameVault актуален";
+            if (statusText) statusText.innerText = "Актуальная версия";
         }
     },
 
@@ -94,40 +95,18 @@ const App = {
         const progContainer = document.getElementById('update-progress-container');
         const statusText = document.getElementById('status-text');
         const statusDot = document.querySelector('.status-dot');
-        const backupBtn = document.getElementById('backup-btn');
 
-        // Прячем полоску загрузки
         if (progContainer) progContainer.style.display = "none";
         
-        // Выводим текст ошибки
         if (statusText) {
-            statusText.style.color = "var(--rose)"; // Цвет ошибки в Rose Pine
+            statusText.style.color = "var(--rose)"; 
             statusText.innerText = errorMessage;
         }
 
-        // Меняем точку на красную (цвет --love в Rose Pine)
         if (statusDot instanceof HTMLElement) {
             statusDot.style.background = "var(--love)";
             statusDot.style.boxShadow = "0 0 8px var(--love)";
         }
-
-        // Возвращаем кнопку бэкапа в рабочее состояние (если она была заблокирована)
-        if (backupBtn instanceof HTMLButtonElement) {
-            backupBtn.disabled = false;
-            backupBtn.innerHTML = `<span class="material-symbols-rounded">inventory_2</span> BACKUP`;
-        }
-        
-        // Через 5 секунд возвращаем стандартный текст
-        setTimeout(() => {
-            if (statusText) {
-                statusText.style.color = ""; 
-                statusText.innerText = "GameVault готов";
-            }
-            if (statusDot instanceof HTMLElement) {
-                statusDot.style.background = "var(--foam)";
-                statusDot.style.boxShadow = "0 0 5px var(--foam)";
-            }
-        }, 5000);
     },
 
     async loadLibrary() {
@@ -345,11 +324,32 @@ const UI = {
         });
     },
 
+    renderSettings(settings) {
+        const pathList = Elements.settingsPathList;
+        if (!pathList) return;
+
+        pathList.innerHTML = settings.non_steam_paths.length ? '' : '<p class="muted-text">Папки не добавлены</p>';
+
+        settings.non_steam_paths.forEach(path => {
+            const item = document.createElement('div');
+            item.className = 'path-item';
+            const safePath = path.replace(/\\/g, '/');
+            item.innerHTML = `
+                <span>${path}</span>
+                <button class="simple-icon-btn" onclick="Actions.removePath('${safePath}')">
+                    <span class="material-symbols-rounded">delete</span>
+                </button>
+            `;
+            pathList.appendChild(item);
+        });
+    },
+
     modals: {
-        open(id) {
+        async open(id) {
             const m = document.getElementById(id);
             if (!m) return;
             if (id === 'history-modal') UI.renderHistory(State.currentBackups);
+            if (id === 'settings-modal') await Actions.refreshSettings();
             m.style.display = 'flex';
             setTimeout(() => m.classList.add('show'), 10);
         },
@@ -418,36 +418,31 @@ const Actions = {
         }
     },
 
+    async refreshSettings() {
+        const settings = await pywebview.api.get_settings();
+        UI.renderSettings(settings);
+    },
+
+
     async addPath() {
         const response = await pywebview.api.select_folder();
-        if (response.status === "success") {
+        if (response) { 
             App.loadLibrary();
-            if (Elements.settingsModal?.style.display === 'flex') Actions.openSettings();
+            if (Elements.settingsModal?.style.display === 'flex') this.refreshSettings();
         }
     },
 
     async removePath(path) {
         if (confirm("Перестать сканировать эту папку?")) {
             const success = await pywebview.api.remove_folder(path);
-            if (success) { Actions.openSettings(); App.loadLibrary(); }
+            if (success) { 
+                App.loadLibrary();
+                if (Elements.settingsModal?.style.display === 'flex') this.refreshSettings();
+            }
         }
     },
 
     async openSettings() {
-        const settings = await pywebview.api.get_settings();
-        const pathList = document.getElementById('settings-path-list');
-        if (pathList) {
-            pathList.innerHTML = settings.non_steam_paths.length ? '' : '<p class="muted-text">Папки не добавлены</p>';
-            settings.non_steam_paths.forEach(path => {
-                const item = document.createElement('div');
-                item.className = 'path-item';
-                item.innerHTML = `<span>${path}</span>
-                    <button class="simple-icon-btn" onclick="Actions.removePath('${path.replace(/\\/g, '/')}')">
-                        <span class="material-symbols-rounded">delete</span>
-                    </button>`;
-                pathList.appendChild(item);
-            });
-        }
         UI.modals.open('settings-modal');
     },
 
