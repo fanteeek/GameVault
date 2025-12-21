@@ -30,7 +30,7 @@ class UpdaterService:
     @staticmethod
     def install_update(download_url):
         try:
-            app_dir = get_app_dir()
+            app_dir = FileUtils.get_app_dir()
             current_exe = sys.executable
             new_exe = app_dir / "GameVault_new.exe"
             

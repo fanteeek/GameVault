@@ -13,7 +13,7 @@ class GameScanner:
         self.steam = steam
         self.config = config
         self.resolver = resolver
-        self.db_path = FileUtils.get_resource_path("database.db")
+        self.db_path = FileUtils.get_app_dir() / "database.db"
 
     def _query_db(self, field: str, value: str) -> Optional[dict]:
         try:
