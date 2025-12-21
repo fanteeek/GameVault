@@ -1,7 +1,12 @@
+import io
 import re
 import sys
 import os
+import base64
 from pathlib import Path
+from PIL import Image
+
+from icoextract import IconExtractor
 
 class FileUtils:
     @staticmethod
@@ -75,3 +80,40 @@ class FileUtils:
                 print("Временный файл инсталлятора удален.")
             except Exception as e:
                 print(f"Не удалось удалить инсталлятор: {e}")
+    
+    @staticmethod
+    def get_exe_icon_base64(exe_path):
+        try:
+            if not os.path.exists(exe_path):
+                return None
+            
+            extractor = IconExtractor(exe_path)
+            data = extractor.get_icon()
+            
+            if not data:
+                return None
+
+            if hasattr(data, 'read'):
+                data.seek(0)
+                icon_bytes = data.read()
+            elif hasattr(data, 'getvalue'):
+                icon_bytes = data.getvalue()
+            else:
+                icon_bytes = data
+
+            with Image.open(io.BytesIO(icon_bytes)) as img:
+                img = img.convert("RGBA")
+                img.thumbnail((64, 64), Image.Resampling.LANCZOS)
+                
+                output_buffer = io.BytesIO()
+                img.save(output_buffer, format="PNG")
+                
+                final_bytes = output_buffer.getvalue()
+                base64_str = base64.b64encode(final_bytes).decode('utf-8')
+                
+                return f"data:image/png;base64,{base64_str}"
+                
+            
+        except Exception as e:
+            print(f"Ошибка извлечения иконки из {os.path.basename(exe_path)}: {e}")
+            return None

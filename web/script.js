@@ -130,9 +130,21 @@ const App = {
 
                     groupGames.forEach(game => {
                         const btn = document.createElement('button');
-                        btn.className = 'nav-btn';
-                        btn.innerText = game.name;
-                        btn.onclick = (e) => UI.selectGame(game, e.target); 
+                        btn.className = 'nav-btn game-item';
+                        btn.setAttribute('data-id', game.id);
+
+                        const placeholder = 'assets/hero_placeholder.jpg';
+
+                        const finalIcon = game.local_icon || placeholder;
+                        const opacity = game.local_icon ? '1' : '0.3';
+
+                        btn.innerHTML = `
+                           <div class="game-icon-wrapper">
+                                <img src="${finalIcon}" class="game-list-icon" style="opacity: ${opacity};">
+                            </div>
+                            <span class="game-title">${game.name}</span>
+                        `;
+                        btn.onclick = (e) => UI.selectGame(game, e.currentTarget); 
                         Elements.listContainer?.appendChild(btn);
                     });
                 }
@@ -183,6 +195,19 @@ const UI = {
         if (activeId) document.getElementById(activeId)?.classList.add('active');
     },
 
+    updateListIcon(gameId, iconData) {
+        const gameBtn = document.querySelector(`.game-item[data-id="${gameId}"]`);
+        if (gameBtn) {
+            const img = /** @type {HTMLImageElement} */ (gameBtn.querySelector('.game-list-icon'));
+            if (img) {
+                if (img.src.includes('hero_placeholder') || img.style.opacity === '0.3') {
+                    img.src = iconData;
+                    img.style.opacity = '1';
+                }
+            }
+        }
+    },
+
     async selectGame(game, element) {
         State.currentView = 'game';
         const loadingId = game.id;
@@ -204,7 +229,6 @@ const UI = {
 
         if (Elements.gameView) {
             Elements.gameView.style.display = 'block';
-            // Elements.gameView.style.animation = 'fadeIn 0.5s ease';
         }
 
         if (game.steam_id) {
@@ -222,19 +246,17 @@ const UI = {
                     const logo = Elements.gameLogo;
                     const titleFallback = Elements.gameTitle;
 
-                    // Проверяем, реально ли загрузилась картинка (не 404)
                     const img = new Image();
                     img.src = logoUrl;
                     img.onload = () => {
                         if (logo instanceof HTMLImageElement) {
                             logo.src = logoUrl;
-                            logo.style.opacity = '1'; // Показываем лого
+                            logo.style.opacity = '1';
                             logo.style.display = 'block';
-                            if (titleFallback) titleFallback.innerText = ''; // УДАЛЯЕМ ТЕКСТ
+                            if (titleFallback) titleFallback.innerText = '';
                         }
                     };
                     img.onerror = () => {
-                        // Если картинки нет, оставляем текст и скрываем ломаное лого
                         if (logo) logo.style.display = 'none';
                         if (titleFallback) titleFallback.innerText = game.name;
                     };
@@ -485,7 +507,6 @@ const WindowControl = {
 
         if (!resizer || !sidebar) return;
 
-        // Восстанавливаем ширину из памяти сразу при инициализации
         const savedWidth = localStorage.getItem('sidebar-width');
         if (savedWidth) sidebar.style.flexBasis = savedWidth;
 
@@ -494,10 +515,8 @@ const WindowControl = {
             document.body.classList.add('resizing-active');
 
             const onMouseMove = (me) => {
-                // me.clientX — это расстояние от левого края окна
                 let newWidth = me.clientX;
 
-                // Ограничения
                 if (newWidth >= 200 && newWidth <= 500) {
                     sidebar.style.flexBasis = newWidth + 'px';
                 }
@@ -508,7 +527,6 @@ const WindowControl = {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
                 
-                // Сохраняем результат в локальное хранилище браузера
                 localStorage.setItem('sidebar-width', sidebar.style.flexBasis);
             };
 

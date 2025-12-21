@@ -28,3 +28,11 @@ class ConfigService:
     def set(self, key: str, value: Any):
         self.data[key] = value
         self.save()
+    
+    def get_icon_cache(self):
+        return self.get("icon_cache", {})
+
+    def save_icon_to_cache(self, game_id, base64_data):
+        cache = self.get_icon_cache()
+        cache[game_id] = base64_data
+        self.set("icon_cache", cache)

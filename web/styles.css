@@ -27,25 +27,21 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Глобальный стиль скроллбара для всего приложения */
 ::-webkit-scrollbar {
-    width: 6px;  /* Ширина вертикального скролла */
-    height: 6px; /* Высота горизонтального (если появится) */
+    width: 6px;
+    height: 6px;
 }
 
-/* Фон дорожки скроллбара */
 ::-webkit-scrollbar-track {
     background: transparent; 
 }
 
-/* Сама "ручка" (ползунок) */
 ::-webkit-scrollbar-thumb {
     background: var(--highlight-high);
     border-radius: 10px;
     transition: background 0.2s;
 }
 
-/* Цвет ползунка при наведении */
 ::-webkit-scrollbar-thumb:hover {
     background: var(--iris);
 }
@@ -57,7 +53,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid var(--highlight-high); /* Тонкая рамка вокруг приложения */
+    border: 1px solid var(--highlight-high);
 }
 
 @font-face {
@@ -79,7 +75,6 @@ body {
     white-space: nowrap;
     word-wrap: normal;
     direction: ltr;
-    /* -webkit-font-feature-settings: 'liga'; */
     -webkit-font-smoothing: antialiased;
 }
 
@@ -117,14 +112,14 @@ body {
     width: 45px;
     height: 100%;
     cursor: pointer;
-    display: flex;         /* Центрируем иконку внутри кнопки */
+    display: flex;
     justify-content: center;
     align-items: center;
     transition: background 0.2s;
 }
 
 #window-controls button .material-symbols-rounded {
-    font-size: 18px; /* Чуть меньше для кнопок управления */
+    font-size: 18px; 
 }
 
 #window-controls button:hover { background: var(--overlay); }
@@ -132,8 +127,6 @@ body {
 
 #status-bar {
     height: 24px;
-    background: var(--side); /* Или чуть темнее --base */
-    border-top: 1px solid var(--border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -152,7 +145,7 @@ body {
 .status-dot {
     width: 6px;
     height: 6px;
-    background: var(--foam); /* Зеленоватый/Голубой — всё ок */
+    background: var(--foam);
     border-radius: 50%;
     box-shadow: 0 0 5px var(--foam);
 }
@@ -187,7 +180,6 @@ body {
     max-width: 500px;
     overflow: hidden;
     position: relative;
-    background: var(--side);
     padding: 10px;
     border-right: 1px solid var(--highlight-high);
 }
@@ -219,19 +211,30 @@ body.resizing-active {
     flex-grow: 1;
     overflow-y: auto;
     padding-right: 5px; 
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.game-list-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+}
+
+.game-title {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #main-content {
     flex-grow: 1;
     background: var(--base);
-    /* padding: 12px; */
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    /* scrollbar-gutter: stable;  */
 }
 
-/* Лоадер */
 #game-loader {
     display: flex;
     flex-direction: column;
@@ -245,7 +248,7 @@ body.resizing-active {
     width: 40px;
     height: 40px;
     border: 4px solid var(--overlay);
-    border-top: 4px solid var(--iris); /* Цвет акцента */
+    border-top: 4px solid var(--iris);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -254,8 +257,6 @@ body.resizing-active {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
-
-/* Library */
 
 .header-actions {
     display: flex;
@@ -284,7 +285,6 @@ body.resizing-active {
 
 .simple-icon-btn:hover { color: var(--iris); }
 
-/* Стиль для разделителей групп в списке */
 .list-section-title {
     font-size: 10px;
     color: var(--muted);
@@ -293,7 +293,6 @@ body.resizing-active {
     letter-spacing: 1px;
 }
 
-/* Элементы интерфейса */
 .nav-section {
     display: flex;
     gap: 2px;
@@ -325,28 +324,51 @@ body.resizing-active {
 
 .nav-btn:hover { background: var(--overlay); }
 
-/* Общий стиль для иконок */
+.nav-btn.game-item {
+    display: flex;
+    align-items: center;
+}
+
+.nav-btn.game-item:hover .game-icon-wrapper {
+    border-color: var(--iris);
+    box-shadow: 0 0 10px rgba(196, 167, 231, 0.2);
+}
+
+.nav-btn.game-item.active {
+    background: var(--card);
+    border-left: 3px solid var(--iris);
+    padding-left: 9px;
+}
+
 .material-symbols-rounded {
-    font-size: 20px; /* Размер иконки */
+    font-size: 20px;
     vertical-align: middle;
     display: inline-block;
     line-height: 1;
 }
 
-/* Центрирование иконок в кнопках */
 .nav-btn, .primary-btn, .secondary-btn {
     display: flex;
     align-items: center;
-    gap: 6px; /* Отступ между иконкой и текстом */
+    gap: 6px; 
 }
 
-/* Специфические настройки для иконок в кнопках навигации */
 .nav-btn .material-symbols-rounded {
     color: var(--subtle);
 }
 
 .nav-btn.active .material-symbols-rounded {
     color: var(--iris);
+}
+
+.game-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--overlay);
+    border: 1px solid var(--border);
 }
 
 .library-header {
@@ -363,9 +385,9 @@ body.resizing-active {
 
 #game-badges {
     display: flex;
-    flex-direction: row; /* Бейдж и текст ID будут друг под другом */
-    gap: 6px;               /* Расстояние между ними */
-    align-items: flex-start; /* Прижимаем их к левому краю */
+    flex-direction: row;
+    gap: 6px;
+    align-items: flex-start;
 }
 
 .game-badge {
@@ -377,13 +399,11 @@ body.resizing-active {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    
-    /* Чтобы бейдж не растягивался на всю ширину, если текста мало */
     width: fit-content; 
     white-space: nowrap;
 }
 
-/* Прогресс-бар */
+/* Progress Bar */
 #progress-bar-bg {
     width: 100%;
     height: 8px;
@@ -407,11 +427,6 @@ body.resizing-active {
     height: 400px;
     overflow: hidden;
     background: var(--base);
-    /* background-size: cover;
-    background-position: center; */
-    /* mask-image: radial-gradient(white, black);
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
-    transition: opacity 0.4s ease-in-out, background-image 0.4s ease-in-out; */
 }
 
 #hero-bg {
@@ -453,16 +468,15 @@ body.resizing-active {
 
 #action-bar {
     display: flex;
-    flex-direction: row; /* Элементы в ряд */
-    align-items: center; /* ВАЖНО: центрирует элементы по вертикали, не давая им растягиваться */
-    gap: 20px;           /* Отступ между кнопками и бейджами */
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
     margin-top: 6px;
 }
 
-/* Общий контейнер для кнопок, чтобы они не сливались с баннером */
 .action-group {
-    background: rgba(25, 23, 36, 0.7); /* Цвет --base с прозрачностью */
-    backdrop-filter: blur(10px);        /* Эффект размытия фона под кнопками */
+    background: rgba(25, 23, 36, 0.7);
+    backdrop-filter: blur(10px);
     padding: 8px;
     border-radius: 12px;
     display: flex;
@@ -471,7 +485,6 @@ body.resizing-active {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Общий стиль кнопок */
 .primary-btn, .secondary-btn {
     border: none;
     padding: 10px 16px;
@@ -487,7 +500,6 @@ body.resizing-active {
     overflow: hidden;
 }
 
-/* Главная кнопка (Backup) */
 .primary-btn {
     background: var(--iris);
     color: var(--base);
@@ -544,7 +556,6 @@ body.resizing-active {
 .iris-text { color: var(--iris); font-size: 48px; margin-bottom: 10px; }
 .muted-text { color: var(--subtle); max-width: 400px; line-height: 1.6; }
 
-/* --- Сетка Дашборда --- */
 .stats-grid {
     display: flex;
     gap: 20px;
@@ -595,10 +606,7 @@ body.resizing-active {
 .stat-card span { display: block; font-size: 32px; font-weight: bold; color: var(--foam); }
 .stat-card label { font-size: 12px; color: var(--muted); text-transform: uppercase; }
 
-/* Анимация обновления списка */
-#game-list {
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
+
 
 .loading {
     opacity: 0;
@@ -615,7 +623,6 @@ body.resizing-active {
     animation: fadeIn 0.4s ease;
 }
 
-/* Класс для плавного исчезновения */
 #progress-container.closing {
     animation: fadeOut 0.4s ease forwards;
 }
@@ -628,7 +635,6 @@ body.resizing-active {
     font-weight: 600;
 }
 
-/* Дорожка прогресса */
 .progress-track {
     height: 8px;
     background: var(--overlay);
@@ -636,12 +642,10 @@ body.resizing-active {
     overflow: hidden;
 }
 
-/* Заполнение полоски */
 #progress-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, var(--iris), var(--foam));
     width: 0%;
-    /* ВАЖНО: Плавное движение самой полоски */
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -700,7 +704,6 @@ body.resizing-active {
 .history-item:hover { background: var(--overlay); }
 
 /* Settings Modal */
-
 .modal {
     display: none;
     position: fixed;
@@ -731,7 +734,7 @@ body.resizing-active {
 }
 
 .modal.closing {
-    animation: fadeOut 0.4s ease forwards; /* forwards заставляет элемент замереть в финальном (прозрачном) кадре */
+    animation: fadeOut 0.4s ease forwards;
 }
 
 .close-modal { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
@@ -747,11 +750,10 @@ body.resizing-active {
     border: 1px solid var(--highlight-high);
 }
 
-/* Зоны захвата */
 .resizer {
     position: fixed;
     z-index: 10000;
-    background: transparent; /* Сделайте red для отладки, чтобы увидеть их */
+    background: transparent;
 }
 
 #resizer-r { top: 0; right: 0; width: 5px; height: 100%; cursor: e-resize; }
@@ -768,7 +770,6 @@ body.resizing-active {
 #resizer-lb { bottom: 0; left: 0; cursor: sw-resize; }
 
 /* ANINMATIONS */
-
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -830,7 +831,6 @@ body.resizing-active {
     color: var(--iris);
 }
 
-/* Иерархия текста */
 .info-block label {
     display: block;
     font-size: 10px;

@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 import os
+import time
 import webview
 import threading
 import json
@@ -11,7 +12,7 @@ from core.file_utils import FileUtils
 from core.updater import UpdaterService
 
 class Bridge:
-    VERSION = "0.0.7"
+    VERSION = "0.0.8"
     
     def __init__(self):
         from core.config import ConfigService
@@ -25,6 +26,8 @@ class Bridge:
         self._scanner = GameScanner(self._steam, self._config, self._resolver)
         self._window = None
         self._is_maximized = False
+        
+        self._icon_cache = self._config.get("icon_cache", {})
     
     def get_app_version(self):
         return self.VERSION
@@ -146,6 +149,59 @@ class Bridge:
         
         return False
     
+    def get_games(self):
+        self._cached_games = self._scanner.scan_all()
+        
+        for game in self._cached_games:
+            game_id = str(game['id'])
+            if game_id in self._icon_cache:
+                game['local_icon'] = self._icon_cache[game_id]
+        
+        threading.Thread(target=self._load_missing_icons_async, daemon=True).start()
+        
+        return self._cached_games
+    
+    def _load_missing_icons_async(self):
+        # Берем копию текущих игр
+        games_to_scan = list(self._cached_games)
+        updated_any = False
+
+        for game in games_to_scan:
+            game_id = str(game['id'])
+            
+            if not self._icon_cache.get(game_id):
+                icon_data = self._scanner.extract_icon_manually(game['install_path'])
+                
+                if icon_data:
+                    self._icon_cache[game_id] = icon_data
+                    updated_any = True
+                    
+                    time.sleep(0.05)
+                    self._window.evaluate_js(f"UI.updateListIcon('{game_id}', '{icon_data}')")
+
+        if updated_any:
+            self._config.set("icon_cache", self._icon_cache)
+            self._config.save()
+    
+    def _load_icons_async(self):
+        icon_cache = self._config.get("icon_cache", {})
+        
+        for game in self._cached_games:
+            game_id = str(game['id'])
+            icon_data = None
+
+            if game_id in icon_cache:
+                icon_data = icon_cache[game_id]
+            else:
+                icon_data = self._scanner.extract_icon_manually(game['install_path'])
+                if icon_data:
+                    icon_cache[game_id] = icon_data
+
+            if icon_data:
+                self._window.evaluate_js(f"UI.updateListIcon('{game_id}', '{icon_data}')")
+        
+        self._config.set("icon_cache", icon_cache)
+                
     def get_game_details(self, game_id: str):
         games = self._scanner.scan_all()
         game = next((g for g in games if str(g['id']) == str(game_id)), None)

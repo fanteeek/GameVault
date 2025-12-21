@@ -65,8 +65,73 @@ class GameScanner:
             "steam_id": db_data["steam_id"],
             "install_path": str(folder),
             "save_paths": resolved_saves,
-            "source": source
-        }
+            "source": source,
+            "local_icon": None 
+        } 
+    
+    def extract_icon_manually(self, game_install_path: str) -> str | None:
+        folder = Path(game_install_path)
+        if not folder.exists(): return None
+
+        all_exes = []
+        try:
+            all_exes.extend([x for x in folder.iterdir() if x.is_file() and x.name.lower().endswith('.exe')])
+            for p in folder.rglob("*.exe"):
+                depth = len(p.parts) - len(folder.parts)
+                if 1 <= depth <= 5:
+                    if p not in all_exes: all_exes.append(p)
+        except: pass
+
+        if not all_exes: return None
+
+        candidates = []
+        for exe in all_exes:
+            score = self._score_exe_candidate(exe, folder)
+            if score > 0:
+                candidates.append((exe, score))
+
+        candidates.sort(key=lambda x: x[1], reverse=True)
+
+        for exe_path, score in candidates:
+            icon_data = FileUtils.get_exe_icon_base64(str(exe_path))
+            if icon_data:
+                return icon_data
+
+        return None
+
+    def _score_exe_candidate(self, exe: Path, game_root: Path) -> int:
+        score = 0
+        name = exe.name.lower()
+        
+        BLACKLIST = [
+            "unins", "setup", "helper", "crash", "report", "config", "tool", "7za",
+            "dxwebsetup", "vcredist", "launcher", "steam_cleaner", "easyanticheat",
+            "touchup", "cleanup", "activation", "redist", "overlay", "physx", "start_protected_game"
+        ]
+        if any(bad in name for bad in BLACKLIST):
+            return -100
+
+        try:
+            size_mb = exe.stat().st_size / (1024 * 1024)
+        except: return -100
+
+        if 15 < size_mb < 500: score += 50
+        elif 2 < size_mb <= 15: score += 20
+        elif 0.2 < size_mb <=5: score += 3
+        
+        clean_folder_name = "".join(filter(str.isalnum, game_root.name.lower()))
+        clean_exe_name = "".join(filter(str.isalnum, exe.stem.lower()))
+        
+        if clean_exe_name == clean_folder_name:
+            score += 100
+        elif clean_exe_name in clean_folder_name or clean_folder_name in clean_exe_name:
+            score += 40
+
+        path_str = str(exe).lower()
+        if "bin" in path_str or "win64" in path_str or "shipping" in path_str:
+            score += 30
+
+        return score
     
     def _is_really_installed(self, folder: Path, steam_id: str = None) -> bool:
         if steam_id:
