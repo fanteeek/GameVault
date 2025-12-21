@@ -44,6 +44,7 @@ const App = {
         const versionEl = Elements.version;
         if (versionEl) versionEl.innerText = version;
         App.checkForUpdates();
+        
         App.loadLibrary();
         WindowControl.initSidebarResizer();
         WindowControl.initResizing();
@@ -52,28 +53,81 @@ const App = {
     },
 
     async checkForUpdates() {
+        const statusText = document.getElementById('status-text');
+        if (statusText) statusText.innerText = "Проверка обновлений...";
+
         const update = await pywebview.api.check_updates();
         
-        if (update.update_available) {
-            const statusText = document.getElementById('status-text');
-            const statusDot = document.querySelector('.status-dot');
-            
-            if (statusText) statusText.innerHTML = `Доступна версия v${update.latest_version}! <a href="#" onclick="App.runUpdate('${update.download_url}')" style="color: var(--iris); margin-left: 10px;">Обновить</a>`;
-            
-            if (statusDot instanceof HTMLElement) {
-                statusDot.style.background = 'var(--iris)';
-                statusDot.style.boxShadow = '0 0 10px var(--iris)';
+        if (update && update.update_available) {
+            if (statusText) {
+                statusText.innerHTML = `Доступна ${update.latest_version}! <a href="#" onclick="App.runUpdate('${update.download_url}')" style="color: var(--iris); margin-left: 5px; text-decoration: none; font-weight: bold;">Обновить</a>`;
             }
+            const dot = document.querySelector('.status-dot');
+            // @ts-ignore
+            if (dot) dot.style.background = 'var(--iris)';
+        } else {
+            if (statusText) statusText.innerText = "GameVault актуален";
         }
     },
 
     async runUpdate(url) {
-        if (confirm("Программа будет перезапущена для установки обновления. Продолжить?")) {
-            const statusText = document.getElementById('status-text');
-            if (statusText) statusText.innerText = "Загрузка обновления...";
-            
-            await pywebview.api.start_update(url);
+        const statusText = document.getElementById('status-text');
+        const progContainer = document.getElementById('update-progress-container');
+        
+        if (statusText) statusText.innerText = "Загрузка...";
+        if (progContainer) progContainer.style.display = "block";
+
+        pywebview.api.start_update(url);
+    },
+
+    updateDownloadProgress(percent) {
+        const fill = document.getElementById('update-progress-fill');
+        const statusText = document.getElementById('status-text');
+        
+        if (fill) fill.style.width = percent + '%';
+        if (percent >= 100 && statusText) {
+            statusText.innerText = "Запуск установки...";
         }
+    },
+
+    resetUpdateUI(errorMessage) {
+        const progContainer = document.getElementById('update-progress-container');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.querySelector('.status-dot');
+        const backupBtn = document.getElementById('backup-btn');
+
+        // Прячем полоску загрузки
+        if (progContainer) progContainer.style.display = "none";
+        
+        // Выводим текст ошибки
+        if (statusText) {
+            statusText.style.color = "var(--rose)"; // Цвет ошибки в Rose Pine
+            statusText.innerText = errorMessage;
+        }
+
+        // Меняем точку на красную (цвет --love в Rose Pine)
+        if (statusDot instanceof HTMLElement) {
+            statusDot.style.background = "var(--love)";
+            statusDot.style.boxShadow = "0 0 8px var(--love)";
+        }
+
+        // Возвращаем кнопку бэкапа в рабочее состояние (если она была заблокирована)
+        if (backupBtn instanceof HTMLButtonElement) {
+            backupBtn.disabled = false;
+            backupBtn.innerHTML = `<span class="material-symbols-rounded">inventory_2</span> BACKUP`;
+        }
+        
+        // Через 5 секунд возвращаем стандартный текст
+        setTimeout(() => {
+            if (statusText) {
+                statusText.style.color = ""; 
+                statusText.innerText = "GameVault готов";
+            }
+            if (statusDot instanceof HTMLElement) {
+                statusDot.style.background = "var(--foam)";
+                statusDot.style.boxShadow = "0 0 5px var(--foam)";
+            }
+        }, 5000);
     },
 
     async loadLibrary() {

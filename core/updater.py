@@ -1,6 +1,5 @@
-import requests
-import sys
 import subprocess
+import requests
 
 from core.file_utils import FileUtils
 
@@ -18,7 +17,6 @@ class UpdaterService:
         except Exception:
             return (0, 0, 0)
 
-    
     @staticmethod
     def check_for_updates(current_version):
         try:
@@ -54,27 +52,29 @@ class UpdaterService:
         return {"update_available": False}
 
     @staticmethod
-    def install_update(download_url):
+    def install_update(download_url, progress_callback):
         try:
             app_dir = FileUtils.get_app_dir()
-            setup_path = app_dir / "GameVault_Update_Setup.exe"
+            setup_path = app_dir / "GameVault_Setup.exe"
             
             response = requests.get(download_url, stream=True)
+            total_size = int(response.headers.get('content-length', 0))
+            
+            downloaded = 0
             with open(setup_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
+                    if chunk:
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total_size > 0:
+                            percent = (downloaded / total_size) * 100
+                            progress_callback(percent)
             
-            print("Запуск обновления...")
-            subprocess.Popen([
-                str(setup_path), 
-                '/VERYSILENT', 
-                '/SUPPRESSMSGBOXES', 
-                '/NORESTART', 
-                '/CLOSEAPPLICATIONS'
-            ], shell=True)
-
-            sys.exit(0)
-            
+            args = "/VERYSILENT /SP- /SUPPRESSMSGBOXES /NORESTART /NOCANCEL /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS"
+            cmd = f'cmd /c start "" "{setup_path}" {args}'
+            subprocess.Popen(cmd, shell=True)
+            return True
+        
         except Exception as e:
-            print(f"Ошибка обновления: {e}")
+            print(f"Ошибка: {e}")
             return False

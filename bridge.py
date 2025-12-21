@@ -33,7 +33,18 @@ class Bridge:
         return UpdaterService.check_for_updates(self.VERSION)
     
     def start_update(self, url):
-        UpdaterService.install_update(url)
+        def progress(percent):
+            self._window.evaluate_js(f"App.updateDownloadProgress({percent})")
+        
+        def run_process():
+            success = UpdaterService.install_update(url, progress)
+            if success:
+                os._exit(0)
+            else:
+                self._window.evaluate_js(f"App.resetUpdateUI('Ошибка при запуске обновления')")
+                    
+        thread = threading.Thread(target=run_process, daemon=True)
+        thread.start()
     
     # Window Controls
     def simple_restore(self):

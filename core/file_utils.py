@@ -65,3 +65,13 @@ class FileUtils:
         if hasattr(sys, 'frozen'):
             return Path(sys.executable).parent
         return Path(os.path.abspath("."))
+    
+    @staticmethod
+    def cleanup_installer():
+        installer_path = FileUtils.get_app_dir() / "GameVault_Setup.exe"
+        if installer_path.exists():
+            try:
+                os.remove(installer_path)
+                print("Временный файл инсталлятора удален.")
+            except Exception as e:
+                print(f"Не удалось удалить инсталлятор: {e}")

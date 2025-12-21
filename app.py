@@ -4,6 +4,8 @@ from bridge import Bridge
 
 from core.file_utils import FileUtils
 
+process_guard = ctypes.windll.kernel32.CreateMutexW(None, False, "GameVaultMutexVariable")
+
 def get_screen_center(window_width, window_height):
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(1)
@@ -19,6 +21,8 @@ def get_screen_center(window_width, window_height):
     return x, y
 
 def main():
+    FileUtils.cleanup_installer()
+    
     api = Bridge()
     
     win_w = 1250
@@ -28,7 +32,7 @@ def main():
     html_path = str(FileUtils.get_resource_path("web/index.html"))
     
     window = webview.create_window(
-        title='SManager',
+        title='GameVault',
         url=html_path,
         js_api=api,
         width=win_w,

@@ -158,9 +158,17 @@
     <footer id="status-bar">
         <div class="footer-left">
             <span class="status-dot"></span>
-            <span id="status-text">Up to date</span>
+            <span id="status-text">Проверка обновлений...</span>
+
+            <div id="update-progress-container" style="display: none; margin-left: 15px; width: 100px;">
+                <div class="progress-track" style="height: 4px;">
+                    <div id="update-progress-fill" style="width: 0%; height: 100%; background: var(--iris); transition: width 0.2s;"></div>
+                </div>
+            </div>
+
         </div>
-        <div class="footer-rig">
+
+        <div class="footer-right">
             <a href="https://github.com/fanteeek/GameVault" class="footer-link">GitHub</a>
             <span class="version-tag">v<span id="app-version">0.0.0</span></span>
         </div>
