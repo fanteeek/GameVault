@@ -34,5 +34,11 @@ interface PyWebViewApi {
 interface Window {
     pywebview: {
         api: PyWebViewApi
-    }
+    };
+    UI: {
+        updateListIcon: (gameId: string, iconData: string) => void;
+        togglePlayButton: (isRunning: boolean) => void;
+        updateDownloadProgress: (percent: number) => void;
+        resetUpdateUI: (errorMessage: string) => void;
+    };
 }

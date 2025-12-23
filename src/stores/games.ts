@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import api from '../api';
 import type { Game, DashboardData, Backup } from '../types'
-import { useUiStore } from './ui';
+// import { useUiStore } from './ui';
 
 export const useGamesStore = defineStore('games', () => {
     // STATES
@@ -30,7 +30,9 @@ export const useGamesStore = defineStore('games', () => {
     async function loadLibrary() {
         isLoading.value = true;
         try {
+            console.log("Try get Games from Python...");
             allGames.value = await api.getGames();
+            console.log("Games taken:", allGames.value.length);
         } catch (e) {
             console.error("Failed to load games", e);
         } finally {

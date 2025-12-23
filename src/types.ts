@@ -38,4 +38,6 @@ export interface UpdateInfo {
     latest_version?: string;
     download_url?: string;
     changelog?: string;
+    error?: string;
+    is_network_error?: boolean;
 }
