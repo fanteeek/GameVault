@@ -57,7 +57,7 @@ class UpdaterService:
             app_dir = FileUtils.get_app_dir()
             setup_path = app_dir / "GameVault_Setup.exe"
             
-            response = requests.get(download_url, stream=True)
+            response = requests.get(download_url, stream=True, allow_redirects=True)
             total_size = int(response.headers.get('content-length', 0))
             
             downloaded = 0

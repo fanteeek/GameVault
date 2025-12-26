@@ -52,6 +52,14 @@
         transition: width 0.2s;
     }
 
+    .progress-track {
+        width: 100px;
+        height: 4px;
+        background: var(--overlay);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
     .footer-left, .footer-right {
         display: flex;
         align-items: center;
@@ -92,14 +100,7 @@
         border-radius: 4px;
         color: var(--subtle);
     }
-
-    .progress-track {
-        height: 4px;
-        background: var(--overlay);
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
+    
     .update-btn {
         background: var(--iris);
         color: var(--base);

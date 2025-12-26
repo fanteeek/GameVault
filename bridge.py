@@ -5,6 +5,7 @@ import time
 import webview
 import threading
 import json
+import logging
 
 from core.backup_service import BackupService
 from core.file_utils import FileUtils
@@ -12,7 +13,7 @@ from core.launcher import LauncherService
 from core.updater import UpdaterService
 
 class Bridge:
-    VERSION = "0.0.4"
+    VERSION = "0.0.8"
     
     def __init__(self):
         from core.config import ConfigService
@@ -46,16 +47,26 @@ class Bridge:
             }
     
     def start_update(self, url):
+        logging.info(f"Staring update from URL: {url}")
+        
         def progress(percent):
-            self._window.evaluate_js(f"App.updateDownloadProgress({percent})")
+            currect_percent = int(percent)
+            logging.debug(f"Download progress: {currect_percent}%")
+            self._window.evaluate_js(f"UI.updateDownloadProgress({currect_percent})")
         
         def run_process():
-            success = UpdaterService.install_update(url, progress)
-            if success:
-                os._exit(0)
-            else:
-                self._window.evaluate_js(f"App.resetUpdateUI('Ошибка при запуске обновления')")
-                    
+            try:
+                success = UpdaterService.install_update(url, progress)
+                if success:
+                    logging.info("Update installed, exiting...")
+                    os._exit(0)
+                else:
+                    logging.error("Update failed in UpdaterService")
+                    self._window.evaluate_js(f"UI.resetUpdateUI('Ошибка при запуске обновления')")
+            except Exception as e:
+                logging.exception("Exception in update thread:")
+                self._window.evaluate_js(f"UI.resetUpdateUI('Ошибка: {str(e)}')")
+                  
         thread = threading.Thread(target=run_process, daemon=True)
         thread.start()
     
@@ -149,7 +160,7 @@ class Bridge:
             return {"status": "error", "message": "Paths not found"}
 
         def on_progress(percent):
-            self._window.evaluate_js(f"updateUIProgress({percent})")
+            self._window.evaluate_js(f"UI.updateUIProgress({percent})")
 
         def worker():
             try:
@@ -159,10 +170,10 @@ class Bridge:
                     self._config.get("backup_root"),
                     on_progress
                 )
-                self._window.evaluate_js(f"onBackupComplete('{result_path}')")
+                self._window.evaluate_js(f"UI.onBackupComplete('{result_path}')")
             except Exception as e:
                 error_msg = json.dumps(str(e))
-                self._window.evaluate_js(f"onBackupComplete({error_msg})")
+                self._window.evaluate_js(f"UI.onBackupComplete({error_msg})")
 
         threading.Thread(target=worker, daemon=True).start()
         return {"status": "started"}
