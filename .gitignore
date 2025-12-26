@@ -50,6 +50,7 @@ lerna-debug.log*
 *.njsproj
 *.sln
 *.sw?
+.vite/
 
 node_modules/
 dist/
