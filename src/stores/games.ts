@@ -32,6 +32,7 @@ export const useGamesStore = defineStore('games', () => {
         try {
             console.log("Try get Games from Python...");
             allGames.value = await api.getGames();
+            await new Promise(resolve => setTimeout(resolve, 300));
             console.log("Games taken:", allGames.value.length);
         } catch (e) {
             console.error("Failed to load games", e);

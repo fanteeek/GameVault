@@ -6,10 +6,9 @@
                 <button
                     @click="gamesStore.loadLibrary()"
                     class="simple-icon-btn"
-                    :class="{ 'spinning': gamesStore.isLoading }"
                     :disabled="gamesStore.isLoading"
                     title="Refresh">
-                    <span class="material-symbols-rounded">refresh</span>
+                    <span class="material-symbols-rounded" :class="{ 'spinning': gamesStore.isLoading }">{{ gamesStore.isLoading ? 'sync' : 'refresh' }}</span>
                 </button>
 
                 <button 
@@ -26,7 +25,7 @@
             <input type="text" id="game-search" placeholder="Search..." v-model="searchQuery">
         </div>
 
-        <div id="game-list">
+        <div id="game-list" :class="{ 'loading-list': gamesStore.isLoading }">
             <!-- Steam -->
             <div class="list-section-title" v-if="filteredSteamGames.length">Steam</div>
             <button
@@ -230,6 +229,12 @@
     .spinning {
         animation: spin 1s linear infinite;
         color: var(--iris);
+    }
+
+    .loading-list {
+        opacity: 0.5;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
     }
 
     @keyframes spin {

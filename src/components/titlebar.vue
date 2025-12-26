@@ -11,7 +11,7 @@
                 <button id="nav-home" class="nav-btn"
                 :class="{ active: uiStore.currentView === 'dashboard' }"
                 @click="uiStore.showDashboard()">
-                <span class="material-symbols-rounded">home</span> Главная
+                <span class="material-symbols-rounded">home</span> General
                 </button>
             </div>
         </div>
