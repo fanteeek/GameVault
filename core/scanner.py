@@ -20,39 +20,92 @@ class GameScanner:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
                 cur = conn.cursor()
-                cur.execute(f"SELECT * FROM games WHERE {field} = ?", (value,))
+                
+                if field == "install_folder":
+                    query = f"""
+                    SELECT * FROM games
+                    WHERE ';' || {field} || ';' LIKE '%;' || ? || ';%'
+                    """
+                    cur.execute(query, (value,))
+                else:
+                    cur.execute(f"SELECT * FROM games WHERE {field} = ?", (value,))
+                
+                
                 row = cur.fetchone()
                 return dict(row) if row else None
         except Exception as e:
-            print(f"DB Error: {e}")
+            print(f"[DataBase] Error: {e}")
             return None
 
     def scan_all(self) -> List[Dict]:
         games = []
         
+        all_db_games = []
+        
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                all_db_games = [dict(r) for r in conn.execute("SELECT * FROM GAMES")]
+        except Exception as e:
+            print(f"[DataBase] Load Error: {e}")
+            
+        def find_game_in_db(folder_name):
+            for g in all_db_games:
+                aliases = [a.strip() for a in (g['install_folder'] or "").split(';') if a.strip()]
+                if folder_name in aliases:
+                    return g
+            return None
+
+        # steam
         for lib in self.steam.get_library_paths():
             common_dir = lib / "steamapps" / "common"
             if not common_dir.exists(): continue
             
             for folder in common_dir.iterdir():
                 if folder.is_dir():
-                    game_data = self._query_db("install_folder", folder.name)
+                    game_data = find_game_in_db(folder.name)
                     if game_data:
                         if self._is_really_installed(folder, game_data["steam_id"]):
                             games.append(self._format_game(game_data, folder, 'steam'))
 
+        # local games
         for path_str in self.config.get("non_steam_paths", []):
             local_path = Path(path_str)
             if not local_path.exists(): continue
             
             for folder in local_path.iterdir():
                 if folder.is_dir():
-                    game_data = self._query_db("install_folder", folder.name)
+                    game_data = find_game_in_db(folder.name)
                     if game_data:
                         if self._is_really_installed(folder):
                             games.append(self._format_game(game_data, folder, 'local'))
         
         return games
+            
+        
+        # for lib in self.steam.get_library_paths():
+        #     common_dir = lib / "steamapps" / "common"
+        #     if not common_dir.exists(): continue
+            
+        #     for folder in common_dir.iterdir():
+        #         if folder.is_dir():
+        #             game_data = self._query_db("install_folder", folder.name)
+        #             if game_data:
+        #                 if self._is_really_installed(folder, game_data["steam_id"]):
+        #                     games.append(self._format_game(game_data, folder, 'steam'))
+
+        # for path_str in self.config.get("non_steam_paths", []):
+        #     local_path = Path(path_str)
+        #     if not local_path.exists(): continue
+            
+        #     for folder in local_path.iterdir():
+        #         if folder.is_dir():
+        #             game_data = self._query_db("install_folder", folder.name)
+        #             if game_data:
+        #                 if self._is_really_installed(folder):
+        #                     games.append(self._format_game(game_data, folder, 'local'))
+        
+        # return games
 
     def _format_game(self, db_data: dict, folder: Path, source: str) -> dict:
         save_data = json.loads(db_data["save_location"])
