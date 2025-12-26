@@ -40,5 +40,7 @@ interface Window {
         togglePlayButton: (isRunning: boolean) => void;
         updateDownloadProgress: (percent: number) => void;
         resetUpdateUI: (errorMessage: string) => void;
+        updateUIProgress: (percent: number) => void;
+        onBackupComplete: (result: string) => void;
     };
 }

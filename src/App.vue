@@ -105,6 +105,22 @@
         uiStore.isUpdating = false;
         uiStore.updateProgress = 0;
         uiStore.updateStatusText = errorMessage;
+      },
+
+      updateUIProgress: (percent: number) => {
+        uiStore.setBackupProgress(percent);
+      },
+
+      onBackupComplete: async (resultPath: string) => {
+        console.log("Backup ready: ", resultPath)
+
+        setTimeout(() => {
+          uiStore.finishBackup();
+        }, 1000);
+
+        if (gamesStore.activeGameId) {
+          await gamesStore.selectGame(gamesStore.activeGameId);
+        }
       }
     };
 

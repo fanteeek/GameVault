@@ -31,6 +31,11 @@ export const useUiStore = defineStore('ui', () => {
     const heroImageUrl = ref<string | null>(null);
     const gameLogoUrl = ref<string | null>(null);
 
+    // Backup
+    const isBackupRunning = ref(false);
+    const backupProgress = ref(0);
+
+
     // Actions /////////////////////////////////////////
     function showDashboard() {
         currentView.value = 'dashboard';
@@ -66,6 +71,17 @@ export const useUiStore = defineStore('ui', () => {
             img.onerror = () => resolve(false);
             img.src = url;
         });
+    }
+
+    // Backup
+    function setBackupProgress(percent: number){
+        isBackupRunning.value = true;
+        backupProgress.value = percent;
+    }
+
+    function finishBackup() {
+        isBackupRunning.value = false;
+        backupProgress.value = 0;
     }
 
     // Window Managment
@@ -149,6 +165,11 @@ export const useUiStore = defineStore('ui', () => {
         toggleMaximize,
         minimize,
         closeApp,
+        // Backup
+        isBackupRunning,
+        backupProgress,
+        setBackupProgress,
+        finishBackup,
         // Update
         checkUpdates,
         startUpdate,
