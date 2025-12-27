@@ -69,6 +69,17 @@
     document.addEventListener('mouseup', onMouseUp);
   }
 
+  const hideLoader = () => {
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+        loader.classList.add('loader-hidden');
+        
+        setTimeout(() => {
+            loader.remove();
+        }, 500);
+    }
+  };
+
   // Init
   const initApp = async () => {
     console.log("Init App..");
@@ -80,6 +91,8 @@
     await uiStore.loadSettings();
     await gamesStore.loadLibrary();
     await gamesStore.loadDashboard();
+
+    hideLoader();
 
     await uiStore.checkUpdates();
     await uiStore.getAppVersion();

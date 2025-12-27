@@ -63,7 +63,8 @@ def main():
         x=center_x,
         y=center_y,
         frameless=True,      
-        easy_drag=False
+        easy_drag=False,
+        background_color='#191724'
     )
     
     api.set_window(window)
