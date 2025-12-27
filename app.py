@@ -52,6 +52,8 @@ def main():
     win_h = 700
     center_x, center_y = get_screen_center(win_w, win_h)
     
+    icon_path = FileUtils.get_resource_path('gamevault.ico')
+    
     window = webview.create_window(
         title='GameVault',
         url=url,
@@ -61,7 +63,7 @@ def main():
         x=center_x,
         y=center_y,
         frameless=True,      
-        easy_drag=False      
+        easy_drag=False
     )
     
     api.set_window(window)

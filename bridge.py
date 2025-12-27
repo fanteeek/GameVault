@@ -20,8 +20,10 @@ class Bridge:
         from core.resolver import PathResolver
         from core.scanner import GameScanner
         from core.steam import SteamService
+        from core.cache_service import CacheService
 
         self._config = ConfigService()
+        self._cache = CacheService()
         self._steam = SteamService()
         self._resolver = PathResolver(self._steam)
         self._scanner = GameScanner(self._steam, self._config, self._resolver)
@@ -29,8 +31,6 @@ class Bridge:
         self._is_maximized = False
         
         self._launcher = None
-        
-        self._icon_cache = self._config.get("icon_cache", {})
     
     def get_app_version(self):
         return self.VERSION
@@ -95,9 +95,6 @@ class Bridge:
     def get_maximize_status(self):
         return self._is_maximized
     
-    def get_games(self):
-        return self._scanner.scan_all()
-
     def close_window(self):
         self._window.destroy()
         sys.exit()
@@ -203,33 +200,59 @@ class Bridge:
         
         for game in self._cached_games:
             game_id = str(game['id'])
-            if game_id in self._icon_cache:
-                game['local_icon'] = self._icon_cache[game_id]
+            b64_icon = self._cache.get_base64('icon', game_id)
+            if b64_icon:
+                game['local_icon'] = b64_icon
         
         threading.Thread(target=self._load_missing_icons_async, daemon=True).start()
         
         return self._cached_games
     
+    def get_game_assets(self, game_id: str, steam_id: str):
+        print(f"[Bridge] requesting assets for Game: {game_id}, SteamID: {steam_id}")
+        hero_result = self._cache.get_base64('hero', game_id)
+        logo_result = self._cache.get_base64('logo', game_id)
+
+        hero_url = ""
+        logo_url = ""
+        
+        if steam_id and str(steam_id) != "None":
+            hero_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/library_hero.jpg"
+            logo_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/logo.png"
+        
+        if not hero_result and hero_url:
+            hero_result = hero_url
+            threading.Thread(target=self._download_single_asset, args=('hero', game_id, hero_url), daemon=True).start()
+        
+        if not logo_result and logo_url:
+            logo_result = logo_url
+            threading.Thread(target=self._download_single_asset, args=('logo', game_id, logo_url), daemon=True).start()
+            
+        return {
+            "hero": hero_result,
+            "logo": logo_result
+        }
+    
+    def _download_single_asset(self, category, game_id, url):
+        if not self._cache.has_cached(category, game_id):
+            print(f"[Cache] Background downloading {category} for {game_id}...")
+            self._cache.save_from_url(category, game_id, url)
+                    
     def _load_missing_icons_async(self):
         games_to_scan = list(self._cached_games)
-        updated_any = False
 
         for game in games_to_scan:
             game_id = str(game['id'])
             
-            if not self._icon_cache.get(game_id):
-                icon_data = self._scanner.extract_icon_manually(game['install_path'])
+            if not self._cache.has_cached('icon', game_id):
+                icon_bytes = self._scanner.extract_icon_manually(game['install_path'])
                 
-                if icon_data:
-                    self._icon_cache[game_id] = icon_data
-                    updated_any = True
+                if icon_bytes:
+                    self._cache.save_icon_bytes(game_id, icon_bytes)
+                    b64_str = self._cache.get_base64('icon', game_id)
                     
                     time.sleep(0.05)
-                    self._window.evaluate_js(f"UI.updateListIcon('{game_id}', '{icon_data}')")
-
-        if updated_any:
-            self._config.set("icon_cache", self._icon_cache)
-            self._config.save()
+                    self._window.evaluate_js(f"UI.updateListIcon('{game_id}', '{b64_str}')")
     
     def _load_icons_async(self):
         icon_cache = self._config.get("icon_cache", {})

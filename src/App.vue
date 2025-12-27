@@ -111,6 +111,12 @@
         uiStore.setBackupProgress(percent);
       },
 
+      updateGameAsset: (gameId: string, type: 'hero' | 'logo', data: string) => {
+        if (gamesStore.activeGameId === gameId) {
+            uiStore.updateAssetFromEvent(type, data);
+        }
+      },
+
       onBackupComplete: async (resultPath: string) => {
         console.log("Backup ready: ", resultPath)
 

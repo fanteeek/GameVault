@@ -50,27 +50,19 @@ export const useUiStore = defineStore('ui', () => {
         heroImageUrl.value = heroPlaceholder;
         gameLogoUrl.value = null;
 
-        if (game.steam_id) {
-            const steamHeroUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/library_hero.jpg`;
-            const isValid = await validateImage(steamHeroUrl);
-            heroImageUrl.value = isValid ? steamHeroUrl : heroPlaceholder;
+        const assets = await api.getGameAssets(game.id, game.steam_id || null);
+        
+        if (assets.hero)
+            heroImageUrl.value = assets.hero;
 
-            // 2. Пытаемся загрузить Лого
-            const steamLogoUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.steam_id}/logo.png`;
-            const isLogoValid = await validateImage(steamLogoUrl);
-            if (isLogoValid) {
-                gameLogoUrl.value = steamLogoUrl;
-            }
-        }
+        if (assets.logo)
+            gameLogoUrl.value = assets.logo;
+        
     }
 
-    function validateImage(url: string): Promise<boolean> {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve(true);
-            img.onerror = () => resolve(false);
-            img.src = url;
-        });
+    function updateAssetFromEvent(type: 'hero' | 'logo', data: string) {
+        if (type === 'hero') heroImageUrl.value = data;
+        if (type === 'logo') gameLogoUrl.value = data;
     }
 
     // Backup
@@ -188,6 +180,7 @@ export const useUiStore = defineStore('ui', () => {
         removeScanPath,
         // GameView
         loadGameAssets,
+        updateAssetFromEvent,
         heroImageUrl,
         heroPlaceholder,
         gameLogoUrl,

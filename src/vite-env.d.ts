@@ -16,6 +16,7 @@ interface PyWebViewApi {
     get_games(): Promise<any[]>;
     get_dashboard_data(): Promise<any>;
     get_game_details(gameId: string): Promise<any>;
+    get_game_assets(gameId: string, steamId: string | null): Promise<{ hero: string | null, logo: string | null }>;
     
     // Actions
     play_game(gameId: string): Promise<boolean>;
@@ -42,5 +43,6 @@ interface Window {
         resetUpdateUI: (errorMessage: string) => void;
         updateUIProgress: (percent: number) => void;
         onBackupComplete: (result: string) => void;
+        updateGameAsset: (gameId: string, type: 'hero' | 'logo', data: string) => void;
     };
 }

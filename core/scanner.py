@@ -81,32 +81,7 @@ class GameScanner:
                             games.append(self._format_game(game_data, folder, 'local'))
         
         return games
-            
         
-        # for lib in self.steam.get_library_paths():
-        #     common_dir = lib / "steamapps" / "common"
-        #     if not common_dir.exists(): continue
-            
-        #     for folder in common_dir.iterdir():
-        #         if folder.is_dir():
-        #             game_data = self._query_db("install_folder", folder.name)
-        #             if game_data:
-        #                 if self._is_really_installed(folder, game_data["steam_id"]):
-        #                     games.append(self._format_game(game_data, folder, 'steam'))
-
-        # for path_str in self.config.get("non_steam_paths", []):
-        #     local_path = Path(path_str)
-        #     if not local_path.exists(): continue
-            
-        #     for folder in local_path.iterdir():
-        #         if folder.is_dir():
-        #             game_data = self._query_db("install_folder", folder.name)
-        #             if game_data:
-        #                 if self._is_really_installed(folder):
-        #                     games.append(self._format_game(game_data, folder, 'local'))
-        
-        # return games
-
     def _format_game(self, db_data: dict, folder: Path, source: str) -> dict:
         save_data = json.loads(db_data["save_location"])
         win_templates = save_data.get("win", [])
@@ -122,7 +97,7 @@ class GameScanner:
             "local_icon": None 
         } 
     
-    def extract_icon_manually(self, game_install_path: str) -> str | None:
+    def extract_icon_manually(self, game_install_path: str) -> bytes | None:
         folder = Path(game_install_path)
         if not folder.exists(): return None
 
@@ -146,7 +121,7 @@ class GameScanner:
         candidates.sort(key=lambda x: x[1], reverse=True)
 
         for exe_path, score in candidates:
-            icon_data = FileUtils.get_exe_icon_base64(str(exe_path))
+            icon_data = FileUtils.extract_icon_to_bytes(str(exe_path))
             if icon_data:
                 return icon_data
 

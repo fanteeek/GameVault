@@ -9,6 +9,8 @@ from PIL import Image
 from icoextract import IconExtractor
 
 class FileUtils:
+    APP_NAME = "GameVault"
+    
     @staticmethod
     def sanitize_name(name: str) -> str:
         return re.sub(r'[\\/*?:"<>|]', "", name)
@@ -66,10 +68,32 @@ class FileUtils:
         return Path(os.path.abspath(".")) / relative_path
 
     @staticmethod
-    def get_app_dir():
+    def get_app_dir() -> Path:
         if hasattr(sys, 'frozen'):
             return Path(sys.executable).parent
         return Path(os.path.abspath("."))
+    
+    # AppData
+    @staticmethod
+    def get_app_data_dir() -> Path:
+        if sys.platform == 'win32':
+            base_path = os.getenv('LOCALAPPDATA') or os.getenv('APPDATA')
+            app_path = Path(base_path) / FileUtils.APP_NAME
+        else:
+            app_path = Path.home() / ".config" / FileUtils.APP_NAME
+        
+        app_path.mkdir(parents=True, exist_ok=True)
+        return app_path
+    
+    @staticmethod
+    def get_cache_dir(subdir: str = "") -> Path:
+        cache_path = FileUtils.get_app_data_dir() / "cache"
+        
+        if subdir:
+            cache_path = cache_path / subdir
+        
+        cache_path.mkdir(parents=True, exist_ok=True)
+        return cache_path
     
     @staticmethod
     def cleanup_installer():
@@ -82,16 +106,13 @@ class FileUtils:
                 print(f"Не удалось удалить инсталлятор: {e}")
     
     @staticmethod
-    def get_exe_icon_base64(exe_path):
+    def extract_icon_to_bytes(exe_path):
         try:
-            if not os.path.exists(exe_path):
-                return None
+            if not os.path.exists(exe_path): return None
             
             extractor = IconExtractor(exe_path)
             data = extractor.get_icon()
-            
-            if not data:
-                return None
+            if not data: return None
 
             if hasattr(data, 'read'):
                 data.seek(0)
@@ -107,11 +128,7 @@ class FileUtils:
                 
                 output_buffer = io.BytesIO()
                 img.save(output_buffer, format="PNG")
-                
-                final_bytes = output_buffer.getvalue()
-                base64_str = base64.b64encode(final_bytes).decode('utf-8')
-                
-                return f"data:image/png;base64,{base64_str}"
+                return output_buffer.getvalue()
                 
             
         except Exception as e:
