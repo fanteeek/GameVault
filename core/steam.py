@@ -1,6 +1,9 @@
+import datetime
+import re
 import winreg
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
+import requests
 import vdf
 
 class SteamService:
@@ -43,3 +46,56 @@ class SteamService:
                     context["account_name"] = info.get("AccountName", "")
                     break
         return context
+    
+    def get_game_news(self, steam_id: str) -> List[Dict[str, Any]]:
+        if not steam_id or str(steam_id) == "None":
+            return []
+
+        try:
+            url = f"http://api.steampowered.com/ISteamNews/GetNewsForApp/v0002/?appid={steam_id}&count=5&maxlength=300&format=json"
+            
+            response = requests.get(url, timeout=3)
+            
+            if response.status_code != 200:
+                return []
+
+            data = response.json()
+            news_items = []
+            
+            for item in data.get('appnews', {}).get('newsitems', []):
+                date_str = datetime.datetime.fromtimestamp(item['date']).strftime('%d.%m.%Y')
+                raw_content = item.get('contents', '')
+                
+                image_url = None
+                img_match = re.search(r'(https?://[^\s"]+\.(?:png|jpg|jpeg|gif))', raw_content)
+                
+                if img_match: image_url = img_match.group(1)
+                elif 'src="' in raw_content:
+                    src_match = re.search(r'src="([^"]+)"', raw_content)
+                    if src_match:
+                        image_url = src_match.group(1)
+                
+                clean_text = re.sub(r'<[^<]+?>', '', raw_content)
+                if image_url: clean_text = clean_text.replace(image_url, '')
+                clean_text = clean_text.strip()
+                
+                news_items.append({
+                    "title": item['title'],
+                    "url": item['url'],
+                    "author": item.get('feedlabel', 'Steam'),
+                    "date": date_str,
+                    "contents": clean_text.strip() + "...",
+                    "image": image_url
+                })
+                
+            return news_items
+            
+        except Exception as e:
+            print(f"[SteamService] Error fetching news for {steam_id}: {e}")
+            return []
+        
+    def get_hero_url(self, steam_id: str) -> str:
+        return f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/library_hero.jpg"
+
+    def get_logo_url(self, steam_id: str) -> str:
+        return f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/logo.png"

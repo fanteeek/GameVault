@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import api from '../api';
-import type { Game, DashboardData, Backup } from '../types'
-// import { useUiStore } from './ui';
+import type { Game, DashboardData, Backup, GameNewsItem } from '../types'
 
 export const useGamesStore = defineStore('games', () => {
     // STATES
@@ -11,6 +10,7 @@ export const useGamesStore = defineStore('games', () => {
     const activeGameId = ref<string | null>(null);
     const activeGameBackups = ref<Backup[]>([]);
     const activeGameSize = ref<string>('0 B');
+    const activeGameNews = ref<GameNewsItem[]>([]);
     const isGameRunning = ref(false);
     const isLoading = ref(false);
 
@@ -60,6 +60,17 @@ export const useGamesStore = defineStore('games', () => {
             activeGameSize.value = details.size;
             activeGameBackups.value = details.backups;
         }
+
+        // Game News
+        activeGameNews.value = [];
+        const game = allGames.value.find(g => String(g.id) === String(gameId));
+        if (game && game.steam_id) {
+            api.getGameNews(game.steam_id).then(news => {
+                if (activeGameId.value === gameId) {
+                    activeGameNews.value = news;
+                }
+            });
+        }
     }
 
     // Play Game
@@ -97,6 +108,7 @@ export const useGamesStore = defineStore('games', () => {
         activeGame,
         activeGameBackups,
         activeGameSize,
+        activeGameNews,
         isGameRunning,
         isLoading,
         steamGames,

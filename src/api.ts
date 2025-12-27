@@ -40,6 +40,11 @@ export const api = {
         return await window.pywebview.api.get_game_assets(gameId, steamId || "");
     },
 
+    async getGameNews(steamId: string) {
+        if (!isPyWebViewReady()) return [];
+        return await window.pywebview.api.get_game_news(steamId);
+    },
+
     async play(gameId: string): Promise<boolean> {
         if (!isPyWebViewReady()) {
             console.log('Playing game:', gameId);

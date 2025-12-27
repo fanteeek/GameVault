@@ -17,6 +17,7 @@ interface PyWebViewApi {
     get_dashboard_data(): Promise<any>;
     get_game_details(gameId: string): Promise<any>;
     get_game_assets(gameId: string, steamId: string | null): Promise<{ hero: string | null, logo: string | null }>;
+    get_game_news(steamId: string): Promise<any[]>;
     
     // Actions
     play_game(gameId: string): Promise<boolean>;

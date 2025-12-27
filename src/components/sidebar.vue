@@ -51,7 +51,7 @@
                 v-for="game in filteredLocalGames"
                 :key="game.id"
                 class="nav-btn game-item"
-                :class="{ acitve: gamesStore.activeGameId === game.id}"
+                :class="{ active: gamesStore.activeGameId === game.id}"
                 @click="selectGame(game.id)">
 
                 <div class="game-icon-wrapper">

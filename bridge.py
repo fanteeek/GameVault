@@ -217,8 +217,8 @@ class Bridge:
         logo_url = ""
         
         if steam_id and str(steam_id) != "None":
-            hero_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/library_hero.jpg"
-            logo_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{steam_id}/logo.png"
+            hero_url = self._steam.get_hero_url(steam_id)
+            logo_url = self._steam.get_logo_url(steam_id)
         
         if not hero_result and hero_url:
             hero_result = hero_url
@@ -232,6 +232,9 @@ class Bridge:
             "hero": hero_result,
             "logo": logo_result
         }
+    
+    def get_game_news(self, steam_id: str):
+        return self._steam.get_game_news(steam_id)
     
     def _download_single_asset(self, category, game_id, url):
         if not self._cache.has_cached(category, game_id):

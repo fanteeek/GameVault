@@ -8,6 +8,15 @@ export interface Game {
     local_icon?: string | null;
 }
 
+export interface GameNewsItem {
+    title: string;
+    url: string;
+    author: string;
+    date: string;
+    contents: string;
+    image?: string | null;
+}
+
 export interface Backup {
     name: string;
     game: string;

@@ -1,47 +1,51 @@
 <script setup lang="ts">
-  import { computed, watch } from 'vue';
-  import { useGamesStore } from '../stores/games';
-  import { useUiStore } from '../stores/ui';
-  import api from '../api';
+import { computed, watch } from 'vue';
+import { useGamesStore } from '../stores/games';
+import { useUiStore } from '../stores/ui';
+import api from '../api';
+import GameNews from './gamenews.vue';
 
-  const gamesStore = useGamesStore();
-  const uiStore = useUiStore();
+const gamesStore = useGamesStore();
+const uiStore = useUiStore();
 
-  const game = computed(() => gamesStore.activeGame);
+const game = computed(() => gamesStore.activeGame);
 
-  watch(game, (newGame) => {
+watch(game, (newGame) => {
     if (newGame) {
-      uiStore.loadGameAssets(newGame);
+        uiStore.loadGameAssets(newGame);
     }
-  }, { immediate: true });
+}, { immediate: true });
 
-  const heroStyle = computed(() => {
+const heroStyle = computed(() => {
     const url = uiStore.heroImageUrl || uiStore.heroPlaceholder;
     return {
-      backgroundImage: `
+        backgroundImage: `
         linear-gradient(to top, var(--base) 5%, transparent 90%), 
         linear-gradient(to right, var(--base) 0%, transparent 70%), 
         url("${url}")
-      `,
-      opacity: 1
+        `,
+        opacity: 1
     };
-  });
+});
 
-  const gameLogoUrl = computed(() => uiStore.gameLogoUrl);
+const gameLogoUrl = computed(() => uiStore.gameLogoUrl);
+const handleLogoError = () => {
+    uiStore.gameLogoUrl = null;
+};
 
-  // Actions
-  const openFolder = async () => {
+// Actions
+const openFolder = async () => {
     if (game.value?.install_path) {
-      await api.openFolder(game.value.install_path);
+        await api.openFolder(game.value.install_path);
     }
-  };
+};
 
-  const openWiki = () => {
+const openWiki = () => {
     if (game.value?.name) {
-      const url = `https://www.pcgamingwiki.com/wiki/${encodeURIComponent(game.value.name)}`;
-      window.open(url, '_blank');
+        const url = `https://www.pcgamingwiki.com/wiki/${encodeURIComponent(game.value.name)}`;
+        window.open(url, '_blank');
     }
-  };
+};
 </script>
 
 <template>
@@ -55,6 +59,7 @@
                     id="game-logo"
                     :src="gameLogoUrl"
                     alt="Logo"
+                    @error="handleLogoError"
                     style="display: block; opacity: 1;"
                 >
                 <h1 v-else id="game-title-fallback">{{ game.name }}</h1>
@@ -124,6 +129,8 @@
                 <span>{{ game.id }}</span>
             </div>
         </div>
+
+        <GameNews />
     </div>
 </template>
 

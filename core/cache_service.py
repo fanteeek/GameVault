@@ -36,6 +36,10 @@ class CacheService:
             }
             
             response = requests.get(url, stream=True, timeout=10, headers=headers)
+            if response.status_code != 200:
+                print(f"[{category}] 404 Not Found for {game_id}. Skipping.")
+                return False
+            
             if response.status_code == 200:
                 with open(path, 'wb') as f:
                     for chunk in response.iter_content(1024):
