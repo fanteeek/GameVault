@@ -24,6 +24,13 @@
         return placeholderImg;
     };
 
+    const handleImageError = (e: Event) => {
+        const img = e.target as HTMLImageElement;
+        if (!img.src.includes('hero_placeholder')) {
+            img.src = placeholderImg;
+        }
+    };
+
     const selectGame = (id: string) => {
         gamesStore.selectGame(id);
         uiStore.showGameView();
@@ -70,8 +77,12 @@
                         :key="game.id + '-' + index"
                         class="carousel-item"
                         @click="selectGame(game.id)"
-                        :title="game.name"
-                        :style="{ backgroundImage: `url(${getCarouselImage(game.steam_id)})` }">
+                        :title="game.name">
+                        <img
+                            :src="getCarouselImage(game.steam_id)"
+                            @error="handleImageError"
+                            alt=""
+                            class="carousel-img">
                     </div>
                 </div>
             </div>
@@ -138,25 +149,34 @@
     }
 
     .carousel-track {
-    display: flex;
-    gap: 15px;
-    width: max-content; 
-    animation: scroll 40s linear infinite;
+        display: flex;
+        gap: 15px;
+        width: max-content; 
+        animation: scroll 40s linear infinite;
     }
 
     .carousel-track:hover {
-    animation-play-state: paused;
+        animation-play-state: paused;
     }
 
     .carousel-item {
-    width: 184px;
-    height: 69px;
-    border-radius: 10px;
-    background-size: cover;
-    background-position: center;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-    flex-shrink: 0;
+        width: 184px;
+        height: 69px;
+        border-radius: 10px;
+        /* background-size: cover; */
+        /* background-position: center; */
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        flex-shrink: 0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .carousel-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .carousel-item:hover {
